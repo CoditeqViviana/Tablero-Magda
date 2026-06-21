@@ -102,7 +102,7 @@
   .filters input[type=search]{min-width:260px}
   .filters .count{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
 
-  .tablewrap{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:auto}
+  .tablewrap{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:68vh}
   table{width:100%;border-collapse:collapse;min-width:1180px}
   th{font-family:var(--disp);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);
     text-align:left;padding:11px 12px;border-bottom:2px solid var(--line);background:#FBFAF7;position:sticky;top:0;z-index:2;white-space:nowrap}
@@ -348,8 +348,6 @@
   <div class="header-actions">
     <span class="conexion config" id="estadoConexion">Configurando…</span>
     <button class="btn ghost" onclick="exportarRespaldo()">⬇ Respaldo</button>
-    <button class="btn ghost" onclick="document.getElementById('importJson').click()">⬆ Restaurar</button>
-    <input type="file" id="importJson" accept=".json" hidden onchange="importarRespaldo(this)">
   </div>
 </header>
 
