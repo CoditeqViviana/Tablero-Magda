@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero Seguimiento OP · Coditeq</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F5F1; --card:#FFFFFF; --ink:#1B2430; --ink-soft:#5A6473;
+    --line:#E3E1DA; --line-strong:#C9C6BC;
+    --azul:#14366E; --azul-claro:#EDF2FB;
+    --ok:#1E7A46; --ok-bg:#E8F5EC;
+    --warn:#A8650A; --warn-bg:#FCF1DE;
+    --danger:#B3261E; --danger-bg:#FBEAE8;
+    --cyan:#009FC7; --magenta:#D6006F; --amarillo:#F2B600; --negro:#1B2430;
+    --mono:'IBM Plex Mono',monospace; --disp:'Archivo',sans-serif; --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:13.5px;line-height:1.45}
+
+  .regbar{display:flex;height:6px}
+  .regbar span{flex:1}
+  .regbar .c{background:var(--cyan)} .regbar .m{background:var(--magenta)}
+  .regbar .y{background:var(--amarillo)} .regbar .k{background:var(--negro)}
+
+  header{background:var(--card);border-bottom:1px solid var(--line);padding:18px 28px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .brand h1{font-family:var(--disp);font-weight:800;font-size:21px;letter-spacing:-.3px}
+  .brand p{color:var(--ink-soft);font-size:12px;margin-top:2px}
+  .header-actions{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+  .conexion{font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:6px}
+  .conexion::before{content:'';width:8px;height:8px;border-radius:50%}
+  .conexion.on{background:var(--ok-bg);color:var(--ok)} .conexion.on::before{background:var(--ok)}
+  .conexion.off{background:var(--danger-bg);color:var(--danger)} .conexion.off::before{background:var(--danger)}
+  .conexion.config{background:var(--warn-bg);color:var(--warn)} .conexion.config::before{background:var(--warn)}
+
+  .btn{font-family:var(--disp);font-weight:600;font-size:12.5px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--ink);padding:9px 14px;border-radius:8px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{border-color:var(--azul);color:var(--azul)}
+  .btn.primary{background:var(--azul);border-color:var(--azul);color:#fff}
+  .btn.primary:hover{background:#0E2A57;color:#fff}
+  .btn.ghost{border-color:transparent;color:var(--ink-soft)}
+  .btn.ghost:hover{color:var(--azul)}
+  .btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+
+  main{max-width:1480px;margin:0 auto;padding:22px 28px 60px}
+
+  .dropzone{border:2px dashed var(--line-strong);border-radius:12px;background:var(--card);padding:22px;text-align:center;
+    cursor:pointer;transition:.2s;margin-bottom:20px}
+  .dropzone.drag{border-color:var(--azul);background:var(--azul-claro)}
+  .dropzone strong{font-family:var(--disp);font-size:14px}
+  .dropzone small{display:block;color:var(--ink-soft);margin-top:4px}
+  .dropzone .last{margin-top:8px;font-family:var(--mono);font-size:11.5px;color:var(--azul)}
+
+  .panel-comercial{display:flex;align-items:center;gap:24px;background:var(--azul-claro);border:1px solid #D7E2F5;
+    border-radius:12px;padding:13px 18px;margin-bottom:16px;flex-wrap:wrap}
+  .panel-comercial .dato{display:flex;flex-direction:column;gap:1px}
+  .panel-comercial .etiqueta{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--azul);opacity:.7}
+  .panel-comercial strong{font-family:var(--disp);font-weight:700;font-size:14.5px;color:var(--azul)}
+  .panel-comercial .btn{margin-left:auto}
+
+  .upload-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:20px}
+  .upload-card{border:2px dashed var(--line-strong);border-radius:12px;background:var(--card);padding:18px;
+    text-align:center;cursor:pointer;transition:.2s}
+  .upload-card.drag{border-color:var(--azul);background:var(--azul-claro)}
+  .upload-card .icono{font-size:19px;display:block;margin-bottom:5px}
+  .upload-card strong{font-family:var(--disp);font-size:13.5px;display:block}
+  .upload-card small{display:block;color:var(--ink-soft);font-size:11px;margin-top:5px;line-height:1.4}
+  .upload-card .last{margin-top:8px;font-family:var(--mono);font-size:10.5px;color:var(--azul)}
+
+  .zona{font-family:var(--disp);font-weight:600;font-size:11px;border-radius:20px;padding:4px 10px;display:inline-block}
+  .zona.roja{background:var(--danger-bg);color:var(--danger)}
+  .zona.amarilla{background:var(--warn-bg);color:var(--warn)}
+  .zona.verde{background:var(--ok-bg);color:var(--ok)}
+  .zona.na{background:var(--line);color:var(--ink-soft)}
+
+  .upload-grid.compacto{margin-bottom:16px}
+  .upload-card.compacto{padding:13px}
+  .upload-card.compacto strong{font-size:12.5px}
+
+  .tabs{display:flex;gap:6px;border-bottom:2px solid var(--line);margin-bottom:18px}
+  .tab{font-family:var(--disp);font-weight:600;font-size:14px;padding:10px 18px;border:none;background:none;cursor:pointer;
+    color:var(--ink-soft);border-bottom:3px solid transparent;margin-bottom:-2px}
+  .tab.active{color:var(--azul);border-bottom-color:var(--azul)}
+  .tab .pill{font-family:var(--mono);font-size:11px;background:var(--line);border-radius:20px;padding:1px 8px;margin-left:6px;color:var(--ink)}
+  .tab.active .pill{background:var(--azul);color:#fff}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .kpi .v{font-family:var(--mono);font-weight:600;font-size:26px;letter-spacing:-.5px}
+  .kpi .l{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+  .kpi.alert .v{color:var(--danger)} .kpi.warn .v{color:var(--warn)} .kpi.ok .v{color:var(--ok)} .kpi.blue .v{color:var(--azul)}
+
+  .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+  .filters input[type=search],.filters select{padding:8px 12px;border:1px solid var(--line-strong);border-radius:8px;
+    font-family:var(--body);font-size:13px;background:var(--card)}
+  .filters input[type=search]{min-width:260px}
+  .filters .count{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+
+  .tablewrap{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:auto}
+  table{width:100%;border-collapse:collapse;min-width:1180px}
+  th{font-family:var(--disp);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);
+    text-align:left;padding:11px 12px;border-bottom:2px solid var(--line);background:#FBFAF7;position:sticky;top:0;z-index:2;white-space:nowrap}
+  td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#FBFAF7}
+  td.mono{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+  td .op{font-family:var(--mono);font-weight:600;font-size:13px;color:var(--azul)}
+  td .np{font-family:var(--mono);font-size:11px;color:var(--ink-soft);display:block;margin-top:1px}
+  td .cliente{font-weight:600;font-size:12.5px}
+  td .prod{color:var(--ink-soft);font-size:11.5px;display:block;margin-top:2px;max-width:330px}
+  .num{text-align:right}
+
+  .dias{font-family:var(--mono);font-weight:600;display:inline-block;min-width:34px;text-align:center;
+    border-radius:6px;padding:3px 8px;font-size:12.5px}
+  .dias.asig{background:var(--azul-claro);color:var(--azul)}
+  .dias.ok{background:var(--ok-bg);color:var(--ok)}
+  .dias.warn{background:var(--warn-bg);color:var(--warn)}
+  .dias.bad{background:var(--danger-bg);color:var(--danger)}
+
+  select.estado{font-family:var(--disp);font-weight:600;font-size:12px;padding:7px 10px;border-radius:8px;cursor:pointer;border:1.5px solid}
+  select.estado.e-proceso{background:var(--ok-bg);border-color:#BBDCC6;color:var(--ok)}
+  select.estado.e-novedad{background:var(--warn-bg);border-color:#EBCB9A;color:var(--warn)}
+
+  textarea.novedad{width:100%;min-width:200px;border:1px solid var(--line);border-radius:8px;padding:7px 9px;
+    font-family:var(--body);font-size:12.5px;resize:vertical;min-height:34px;background:#FDFDFB}
+  textarea.novedad:focus{border-color:var(--azul)}
+  textarea.novedad.tiene{border-color:#EBCB9A;background:#FFFDF7}
+
+  input.fecha-real{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:7px;padding:6px 8px}
+
+  .cumple{font-family:var(--disp);font-weight:600;font-size:11px;border-radius:20px;padding:4px 10px;display:inline-block}
+  .cumple.si{background:var(--ok-bg);color:var(--ok)}
+  .cumple.no{background:var(--danger-bg);color:var(--danger)}
+
+  .empty{padding:50px 20px;text-align:center;color:var(--ink-soft)}
+  .empty strong{font-family:var(--disp);display:block;font-size:15px;color:var(--ink);margin-bottom:6px}
+
+  .seccion-titulo{font-family:var(--disp);font-weight:700;font-size:15px;margin:26px 0 12px}
+
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;
+    font-family:var(--disp);font-weight:600;font-size:13px;padding:12px 22px;border-radius:10px;opacity:0;pointer-events:none;
+    transition:.25s;z-index:99;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* Pantalla de acceso */
+  #gate{position:fixed;inset:0;background:var(--paper);z-index:100;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0}
+  #gate .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:36px 40px;max-width:380px;width:92%;text-align:center}
+  #gate h2{font-family:var(--disp);font-weight:800;font-size:19px;margin-bottom:6px}
+  #gate p{color:var(--ink-soft);font-size:12.5px;margin-bottom:18px}
+  #gate input{width:100%;padding:11px 14px;border:1px solid var(--line-strong);border-radius:8px;font-family:var(--mono);
+    font-size:14px;text-align:center;letter-spacing:.2em;margin-bottom:12px}
+  #gate .err{color:var(--danger);font-size:12px;min-height:16px;margin-bottom:8px}
+  #gate .regbar{width:100%;max-width:380px;border-radius:14px 14px 0 0;overflow:hidden;margin-bottom:-1px;position:relative;z-index:1;width:92%;max-width:380px}
+
+  /* Aviso de configuración pendiente */
+  #configAviso{background:var(--warn-bg);border:1px solid #EBCB9A;border-radius:12px;padding:18px 20px;margin-bottom:20px;display:none}
+  #configAviso strong{font-family:var(--disp)}
+  #configAviso code{font-family:var(--mono);font-size:11.5px;background:#fff;padding:2px 6px;border-radius:4px}
+
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+  @media (max-width:720px){
+    header{padding:14px 16px} main{padding:16px 14px 50px}
+    .filters input[type=search]{min-width:100%}
+  }
+</style>
+</head>
+<body>
+
+<!-- ███████████████████████████████████████████████████████████████████
+     CONFIGURACIÓN — edita SOLO esta sección antes de publicar
+     ███████████████████████████████████████████████████████████████████ -->
+<script>
+  // 1) Pega aquí la configuración de tu proyecto Firebase
+  //    (Consola Firebase → Configuración del proyecto → Tus apps → Web)
+  const FIREBASE_CONFIG = {
+    apiKey: "PEGA_AQUI_TU_API_KEY",
+    authDomain: "tu-proyecto.firebaseapp.com",
+    projectId: "tu-proyecto",
+    storageBucket: "tu-proyecto.appspot.com",
+    messagingSenderId: "000000000000",
+    appId: "1:000000000000:web:xxxxxxxxxxxxxxxx"
+  };
+
+  // 2) Clave de acceso al tablero (compártela con Magda / direcciones)
+  const CLAVE_ACCESO = "coditeq2026";
+
+  // 3) Nombres de las colecciones en Firestore (no es necesario cambiarlos)
+  const COLECCION_OP = "op_magda";
+  const COLECCION_BUFFER = "amortiguadores_magda";
+
+  // 4) Comercial al que pertenece este tablero y sus clientes asignados.
+  //    Esto define el "alcance": solo las OP de estos clientes se cargarán al tablero.
+  //    Se puede actualizar después desde el botón "Actualizar clientes asignados" sin tocar este código.
+  const COMERCIAL_INICIAL = "ACOSTA URREGO MAGDA LILIANA";
+  const ALCANCE_INICIAL = [
+    "SISTEMAS Y COMPUTADORES SA",
+    "QUIMICA COMERCIAL ANDINA S A S",
+    "SYRUS QCA SAS",
+    "IDENFORMAS SAS",
+    "ANHIDRIDOS Y DERIVADOS DE COLOMBIA SAS",
+    "PROMOTORA DE DIVERSION S.A.S DIVER S.A.S",
+    "ESLAVA RUEDA LUIS FELIPE",
+    "ADDIMENTUM S.A.S.",
+    "FAST COLOMBIA SAS",
+    "SERVICIOS AEREOS PANAMERICANOS SAS",
+    "TAKAMI S A",
+    "ANHIDRIDOS Y DERIVADOS DE COLOMBIA SAS 1",
+    "GIVAUDAN COLOMBIA SAS",
+    "MOONS COLOMBIA S.A.S.",
+    "MANE SUCURSAL COLOMBIA",
+    "ESENCIA & CO SAS",
+    "FINEAROM SAS",
+    "SIPOTE BURRITO SA",
+    "CARVAJAL SOLUCIONES DE COMUNICACION S.A.S.",
+    "PQUIM SAS",
+    "SOLUCIONES INTEGRALES DE MOVILIDAD, ACCESO Y TRAFICO SAS",
+    "OXIGENADOS Y DERIVADOS SAS",
+    "SOCIEDAD DE APOYO AERONAUTICO SA",
+    "TALMA SERVICIOS AEROPORTUARIOS S.A.",
+    "COMPAÑIA GLOBAL DE PINTURAS SA",
+    "AEROREPUBLICA SA",
+    "MEGACOMERCIAL SAS",
+    "SUCROAL S.A.",
+    "KRUGERCORPORATION S.A.S",
+    "OFTALMOS S.A.",
+    "MARTEMPAQUE SAS",
+    "CARVAJAL TECNOLOGIA Y SERVICIOS S.A.S. BIC",
+    "ARAJET SA",
+    "ESPECIALIDADES DIAGNOSTICAS IHR S.A.S.",
+    "SUMINISTROS GLAS S.A.S.",
+    "PREFLEX S A S",
+    "COMERCIAL FOX S A S",
+    "O-TEK CENTRAL S.A.S.",
+    "PRODUCTORA DE INSUMOS AGROPECUARIOS SOMEX S.A.S.",
+    "GRUPO EMPRESARIAL PARA MANTENIMIENTO Y ASISTENCIA TECNICA EN QUIMICA SAS SOCIEDAD DE BENEFICIO E INTERES COLECTIVO BIC",
+    "COMPAÑIA PANAMEÑA DE AVIACION SA",
+    "DIAZ HERNANDEZ CARLOS NELSON",
+    "MEGACOMERCIAL ZF S.A.S.",
+    "HORTIFRUT COLOMBIA SAS",
+    "GRAFITINTAS S.A.",
+    "GRUPO ARTAK S A S",
+    "CONCESIONARIA VUELA COMPAÑIA DE AVIACION S.A.P.I DE C.V SUCURSAL COLOMBIA",
+    "MAPEI COLOMBIA S. A. S.",
+    "MAPEI COLOMBIA S. A. S. - 1",
+    "MAPEI COLOMBIA S. A. S. - 2",
+    "MAPEI COLOMBIA S. A. S. - 3",
+    "FIDEICOMISOS SOCIEDAD FIDUCIARIA DE OCCIDENTE SA",
+    "LIPESA COLOMBIA S.A.S",
+    "GIVAUDAN ARGENTINA SA",
+    "GIVAUDAN CHILE SPA",
+    "DISTRIBUIDORA DE VINOS Y LICORES SAS",
+    "SCHNEIDER ELECTRIC DE COLOMBIA SAS",
+    "MARSAM BRANDS SAS",
+    "QUIMICA COMERCIAL ANDINA S A S BARRANQUILLA",
+    "DISFRAROMAS ONE S.A.S",
+    "MARCANDO SOLUCIONES S.A.S",
+    "T-VAPAN 500 S.A.S.",
+    "COMPAÑIA PANAMEÑA DE AVIACION S A",
+    "LABORATORIO SERVINSUMOS S.A.",
+    "EMPRESA AEREA DE SERVICIOS Y FACILITACION LOGISTICA INTEGRAL SA",
+    "HRA INGREDIENTS SAS",
+    "CAMPOFERT S.A.S",
+    "CIUDADELA COMERCIAL UNICENTRO - PROPIEDAD HORIZONTAL",
+    "WATTAA GROUP S.A.S.",
+    "SUMIMAS S A S",
+    "PINTUCO COSTA RICA PCR",
+    "MANE ANDINA S.A.S.",
+    "B & B INVERMUNDO SAS",
+    "VERTICAL COFFEE CO S.A.S",
+    "SERVICIOS AEROPORTUARIOS INTEGRADOS SAI S.A.S.",
+    "INTERAMERICANA DE PRODUCTOS QUIMICOS DEL ECUADOR S.A. INTERQUIMEC",
+    "INTERAMERICANA DE PRODUCTOS QUIMICOS S.A.S. INTERQUIM S.A.S.",
+    "MATEUS VILLAMIL SAUL ALBERTO",
+    "AKZO NOBEL PERU S.A.C.",
+    "A LA PEPA SAS",
+    "ECOLAB COLOMBIA S.A.",
+    "DAVIVIENDA",
+    "HOKO COLOMBIA S.A.S",
+    "MUNDOTINTAS S.A.S",
+    "HARMONY ROOTS SAS"
+  ];
+
+  // 5) Lista inicial de referencias especiales a monitorear, con su amortiguador (buffer), el tipo/cliente
+  //    al que pertenecen, y su origen: "MP" (Base Materiales, se muestra en la pestaña Materias Primas) o
+  //    "PT" (Base Producto Terminado, se muestra en la pestaña MP/PT). Se puede actualizar después desde el
+  //    botón "Actualizar lista de referencias" en la pestaña MP/PT, sin tocar este código.
+  const BUFFER_INICIAL = [
+    {referencia:"THERMOSCRIP 34.0 MITSUBISHI T8046", tipo:"Mitsubishi", amortiguador:31280, origen:"MP"},
+    {referencia:"THERMOSCRIP 33.0 MITSUBISHI T8046", tipo:"Mitsubishi", amortiguador:124476, origen:"MP"},
+    {referencia:"PPBMATE 13.0 WBIJ FREEZER GLASINE AVERY", tipo:"Digital 79799", amortiguador:1300, origen:"MP"},
+    {referencia:"PPBMATE 28.5 WBIJ FREEZER GLASINE AVERY", tipo:"Digital 79799", amortiguador:null, origen:"MP"},
+    {referencia:"PPBMATE 15.0 WBIJ FREEZER GLASINE AVERY", tipo:"Digital 79799", amortiguador:null, origen:"MP"},
+    {referencia:"PPBMATE 17.0 WBIJ FREEZER GLASINE AVERY", tipo:"Digital 79799", amortiguador:null, origen:"MP"},
+    {referencia:"PPBMATE 21.5 WBIJ FREEZER GLASINE AVERY", tipo:"Digital 79799", amortiguador:2000, origen:"MP"},
+    {referencia:"PP MATE 21.5 C1283 DURABLE", tipo:"Digital Durable", amortiguador:1505, origen:"MP"},
+    {referencia:"PAPEL BLANCO MATE 21.5 OZS005 F5RO6448 AVERY", tipo:"Digital OZ", amortiguador:null, origen:"MP"},
+    {referencia:"ESM 22.0 MULTIPROPOSITO AVERY AX697", tipo:"Papel Digital AX", amortiguador:null, origen:"MP"},
+    {referencia:"ESM 24.0 MULTIPROPOSITO AVERY AX697", tipo:"Papel Digital AX", amortiguador:null, origen:"MP"},
+    {referencia:"PPTERMICO 21.5 BAGTAG AVERY F5RO6425", tipo:"BagTag", amortiguador:null, origen:"MP"},
+    {referencia:"PAPEL BLANCO MATE 21.0 OZS005 F5RO6448 AVERY", tipo:"Digital OZ", amortiguador:null, origen:"MP"},
+    {referencia:"PPBB DIGITAL 22.0 RITRAMA DGT0081", tipo:"Digital Ritrama", amortiguador:660, origen:"MP"},
+    {referencia:"PPBB DIGITAL 19.0 RITRAMA DGT0081", tipo:"Digital Ritrama", amortiguador:190, origen:"MP"},
+    {referencia:"BL-PAMS-105X100000-R1-F-1F-C30-ROLLO-CONT-CE", tipo:"Varios", amortiguador:35, origen:"PT"},
+    {referencia:"BL-PAMS-208X100000-R1-P-1F-C30-ROLLO CONT-CORTE", tipo:"Varios", amortiguador:120, origen:"PT"},
+    {referencia:"BL-TTT-100X200-R350-M-1F-C10", tipo:"Anhidridos", amortiguador:22.5, origen:"PT"},
+    {referencia:"BL-PAMS-150X100000-R0-M-1F-C30-ROLLO-CONTINU", tipo:"Interquim", amortiguador:10, origen:"PT"},
+    {referencia:"BL-TTT-100X50-R1000-M-1F-C10-", tipo:"Anhidridos", amortiguador:15.63, origen:"PT"},
+    {referencia:"BL-TTT-100X200-R350-M-1F-C10", tipo:"Pintuco", amortiguador:22.5, origen:"PT"},
+    {referencia:"BL-TTT-80X40-R3500-P-1F-C30-PINTUCO-UND", tipo:"Pintuco", amortiguador:7, origen:"PT"},
+    {referencia:"IS-TTT-50X20-R12000-M-2F-C30-TACA-PINTUCO", tipo:"Pintuco", amortiguador:200, origen:"PT"},
+    {referencia:"BL-TTT-22X76-R8000-M-4F-C30-PINTUCO", tipo:"Pintuco", amortiguador:400, origen:"PT"},
+    {referencia:"BL-TTT-50X100-R2500-M-2F-C30-PINTUCO", tipo:"Pintuco", amortiguador:300, origen:"PT"},
+    {referencia:"BL-PPMATDIG-170X100000-R1-P-F1-C30-AKZONO", tipo:"Pintuco", amortiguador:10, origen:"PT"},
+    {referencia:"BL-TTT-100X150-R1000-P-1F-C30-PINTUCO", tipo:"Pintuco", amortiguador:20, origen:"PT"},
+    {referencia:"BL-TTT-16X48-R10000-M-4F-C30-PINTUCO", tipo:"Pintuco", amortiguador:50, origen:"PT"},
+    {referencia:"IC-TTT-130X210-R500-P-1F-C30-ROMBOS", tipo:"Pintuco", amortiguador:10, origen:"PT"},
+    {referencia:"BL-PPBDIG-100X220-R600-P-1F-C30-PURATOS", tipo:"Puratos", amortiguador:40, origen:"PT"},
+    {referencia:"BL-PPBDIG-90X150-R600-P-1F-C30-PURATOS", tipo:"Puratos", amortiguador:10, origen:"PT"},
+    {referencia:"BL-PPBDURA-215X100-R1-M-1F-C30-CONTINUO", tipo:"Ecolab", amortiguador:32, origen:"PT"},
+    {referencia:"BL-PPBM-130X100000-R1-M-1F-C30-ROLLO-CONTINUO", tipo:"Ecolab", amortiguador:100, origen:"PT"}
+  ];
+</script>
+<!-- ███████████████████████████  FIN CONFIGURACIÓN  ███████████████████ -->
+
+<div id="gate">
+  <div class="regbar" aria-hidden="true"><span class="c"></span><span class="m"></span><span class="y"></span><span class="k"></span></div>
+  <div class="card">
+    <h2>Tablero de Seguimiento OP</h2>
+    <p>Coditeq · Ingresa la clave de acceso para ver el tablero</p>
+    <input type="password" id="gateInput" placeholder="••••••••" autocomplete="off">
+    <div class="err" id="gateErr"></div>
+    <button class="btn primary" style="width:100%;justify-content:center" onclick="verificarClave()">Entrar</button>
+  </div>
+</div>
+
+<div class="regbar" aria-hidden="true"><span class="c"></span><span class="m"></span><span class="y"></span><span class="k"></span></div>
+<header>
+  <div class="brand">
+    <h1>Tablero de Seguimiento OP — Vista Comercial</h1>
+    <p>Coditeq · Tiempo asignado, estados y novedades de tus clientes asignados</p>
+  </div>
+  <div class="header-actions">
+    <span class="conexion config" id="estadoConexion">Configurando…</span>
+    <button class="btn ghost" onclick="exportarRespaldo()">⬇ Respaldo</button>
+    <button class="btn ghost" onclick="document.getElementById('importJson').click()">⬆ Restaurar</button>
+    <input type="file" id="importJson" accept=".json" hidden onchange="importarRespaldo(this)">
+  </div>
+</header>
+
+<main>
+  <div id="configAviso">
+    <strong>⚠ Falta conectar Firebase.</strong> Abre este archivo en un editor de texto, busca la sección
+    <code>CONFIGURACIÓN</code> al inicio y pega los datos de tu proyecto Firebase. Recuerda agregar en las
+    reglas de Firestore las colecciones <code>op_magda</code> y <code>amortiguadores_magda</code>.
+    Mientras tanto el tablero funciona solo en este navegador (modo local).
+  </div>
+
+  <div class="panel-comercial">
+    <div class="dato"><span class="etiqueta">Comercial</span><strong id="nombreComercial">—</strong></div>
+    <div class="dato"><span class="etiqueta">Clientes en alcance</span><strong id="totalAlcance">0</strong></div>
+    <button class="btn ghost" onclick="document.getElementById('fileInputAlcance').click()">⬆ Actualizar clientes asignados</button>
+    <input type="file" id="fileInputAlcance" accept=".xlsx,.xls" hidden>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" id="tabPrincipal" role="tab" onclick="cambiarTab('principal')">Tablero principal <span class="pill" id="countPrincipal">0</span></button>
+    <button class="tab" id="tabEntregadas" role="tab" onclick="cambiarTab('entregadas')">Entregadas · Indicador <span class="pill" id="countEntregadas">0</span></button>
+    <button class="tab" id="tabMateriales" role="tab" onclick="cambiarTab('materiales')">Materias Primas <span class="pill" id="countMateriales">0</span></button>
+    <button class="tab" id="tabAmortiguadores" role="tab" onclick="cambiarTab('amortiguadores')">MP/PT <span class="pill" id="countAmortiguadores">0</span></button>
+  </div>
+
+  <!-- ============ TABLERO PRINCIPAL ============ -->
+  <section id="vistaPrincipal">
+    <div class="upload-grid compacto">
+      <div class="upload-card compacto" id="dropzone" tabindex="0" role="button" aria-label="Cargar Excel de OP">
+        <span class="icono">📦</span>
+        <strong>Excel diario de OP</strong>
+        <small>Nuevas se agregan, existentes conservan estado y novedad. Solo se cargan clientes dentro del alcance. También cruza contra las referencias de MP/PT y suma su cantidad como tránsito de producción.</small>
+        <div class="last" id="ultimaCarga"></div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="kpi blue"><div class="v" id="kActivas">0</div><div class="l">OP activas</div></div>
+      <div class="kpi warn"><div class="v" id="kNovedad">0</div><div class="l">Con novedad</div></div>
+      <div class="kpi alert"><div class="v" id="kVencidas">0</div><div class="l">Vencidas</div></div>
+      <div class="kpi"><div class="v" id="kProximas">0</div><div class="l">Vencen en ≤ 3 días</div></div>
+      <div class="kpi"><div class="v" id="kPromedio">0</div><div class="l">Prom. días asignados</div></div>
+      <div class="kpi alert"><div class="v" id="kCriticosMP">0</div><div class="l">MP/PT en zona crítica</div></div>
+    </div>
+
+    <div class="filters">
+      <input type="search" id="fBuscar" placeholder="Buscar OP, NP, cliente o producto…" oninput="render()">
+      <select id="fEstado" onchange="render()">
+        <option value="">Todos los estados</option>
+        <option>En proceso sin novedad</option>
+        <option>Con Novedad</option>
+      </select>
+      <select id="fCentro" onchange="render()"><option value="">Todos los centros</option></select>
+      <select id="fOrden" onchange="render()">
+        <option value="entrega">Ordenar: Fecha de entrega</option>
+        <option value="restantes">Ordenar: Días restantes</option>
+        <option value="asignados">Ordenar: Días asignados</option>
+        <option value="cliente">Ordenar: Cliente</option>
+        <option value="op">Ordenar: Código OP</option>
+      </select>
+      <span class="count" id="countFiltro"></span>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>OP / NP</th><th>Cliente / Producto</th><th class="num">Cantidad</th>
+          <th>F. Creación</th><th>F. Entrega</th>
+          <th class="num" title="Fecha de Entrega − Fecha de Creación">Días asignados</th>
+          <th class="num">Días restantes</th>
+          <th>Estado</th><th style="min-width:220px">Novedad</th>
+        </tr></thead>
+        <tbody id="bodyPrincipal"></tbody>
+      </table>
+      <div class="empty" id="emptyPrincipal" hidden>
+        <strong>No hay órdenes en el tablero</strong>
+        Carga el Excel diario para comenzar el seguimiento.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ENTREGADAS ============ -->
+  <section id="vistaEntregadas" hidden>
+    <div class="kpis">
+      <div class="kpi blue"><div class="v" id="kEntregadas">0</div><div class="l">Total entregadas</div></div>
+      <div class="kpi ok"><div class="v" id="kATiempo">0</div><div class="l">Entregadas a tiempo</div></div>
+      <div class="kpi alert"><div class="v" id="kTarde">0</div><div class="l">Entregadas tarde</div></div>
+      <div class="kpi ok"><div class="v" id="kIndicador">—</div><div class="l">Indicador de entregas</div></div>
+      <div class="kpi"><div class="v" id="kDiasReales">—</div><div class="l">Prom. días reales</div></div>
+    </div>
+
+    <div class="filters">
+      <input type="search" id="fBuscarEnt" placeholder="Buscar en entregadas…" oninput="render()">
+      <button class="btn" onclick="exportarEntregadas()">⬇ Exportar entregadas a Excel</button>
+      <span class="count" id="countFiltroEnt"></span>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>OP / NP</th><th>Cliente / Producto</th><th class="num">Cantidad</th>
+          <th>F. Creación</th><th>F. Entrega (plan)</th><th>F. Entrega real</th>
+          <th class="num">Días asignados</th><th class="num">Días reales</th>
+          <th>Cumplimiento</th><th>Novedad</th><th></th>
+        </tr></thead>
+        <tbody id="bodyEntregadas"></tbody>
+      </table>
+      <div class="empty" id="emptyEntregadas" hidden>
+        <strong>Aún no hay órdenes entregadas</strong>
+        Cuando marques una OP como “Entregada” en el tablero principal, aparecerá aquí.
+      </div>
+    </div>
+
+    <div class="seccion-titulo">Indicador mensual de cumplimiento <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(según fecha de entrega real)</span></div>
+    <div class="tablewrap" style="max-width:640px">
+      <table style="min-width:0">
+        <thead><tr><th>Mes</th><th class="num">Entregadas</th><th class="num">A tiempo</th><th class="num">Tarde</th><th class="num">% Cumplimiento</th></tr></thead>
+        <tbody id="bodyMensual"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ MATERIAS PRIMAS ============ -->
+  <section id="vistaMateriales" hidden>
+    <div class="seccion-titulo">Materiales especiales — referencia y amortiguador</div>
+    <div class="filters">
+      <input type="search" id="fBuscarBufferMP" placeholder="Buscar referencia, tipo o proveedor…" oninput="render()">
+      <select id="fEstadoBufferMP" onchange="render()">
+        <option value="">Todos los estados</option>
+        <option value="roja">Crítico</option>
+        <option value="amarilla">Alerta</option>
+        <option value="verde">OK</option>
+        <option value="na">Sin amortiguador</option>
+      </select>
+      <select id="fTipoBufferMP" onchange="render()"><option value="">Todos los tipos</option></select>
+      <select id="fOrdenBufferMP" onchange="render()">
+        <option value="zona">Ordenar: Más crítico primero</option>
+        <option value="referencia">Ordenar: Referencia</option>
+        <option value="tipo">Ordenar: Tipo / Cliente</option>
+        <option value="llegada">Ordenar: Fecha estimada de llegada</option>
+      </select>
+      <span class="count" id="countFiltroBufferMP"></span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Referencia</th><th>Tipo / Cliente</th>
+          <th class="num">Amortiguador</th><th class="num">Inv. en sitio</th>
+          <th class="num">Inv. en tránsito</th><th>F. estimada llegada</th>
+          <th>Proveedor</th><th>Estado</th>
+        </tr></thead>
+        <tbody id="bodyBufferMP"></tbody>
+      </table>
+      <div class="empty" id="emptyBufferMP" hidden>
+        <strong>No hay materiales especiales monitoreados</strong>
+        Carga el archivo Base de materiales/producto terminado desde la pestaña MP/PT (la hoja "Base Materiales" aparece aquí).
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AMORTIGUADORES ============ -->
+  <section id="vistaAmortiguadores" hidden>
+    <div class="upload-grid compacto">
+      <div class="upload-card compacto" id="dropzoneBuffer" tabindex="0" role="button" aria-label="Cargar lista de referencias a monitorear">
+        <span class="icono">📋</span>
+        <strong>Lista de referencias (Base MP y PT)</strong>
+        <small>Define qué referencias se monitorean y su amortiguador. La hoja "Base Materiales" se muestra en la pestaña Materias Primas; aquí solo Producto Terminado. Solo agrega/actualiza, no borra.</small>
+        <div class="last" id="ultimaCargaBuffer"></div>
+        <input type="file" id="fileInputBuffer" accept=".xlsx,.xls" hidden>
+      </div>
+      <div class="upload-card compacto" id="dropzoneSitio" tabindex="0" role="button" aria-label="Cargar inventario en sitio">
+        <span class="icono">🏬</span>
+        <strong>Inventario en sitio (stock quant)</strong>
+        <small>Actualiza la cantidad disponible en bodega de cada referencia monitoreada.</small>
+        <div class="last" id="ultimaCargaSitio"></div>
+        <input type="file" id="fileInputSitio" accept=".xlsx,.xls" hidden>
+      </div>
+      <div class="upload-card compacto" id="dropzoneTransito" tabindex="0" role="button" aria-label="Cargar inventario en tránsito">
+        <span class="icono">🚚</span>
+        <strong>Inventario en tránsito (órdenes)</strong>
+        <small>Actualiza cantidad en camino, proveedor y fecha estimada de llegada.</small>
+        <div class="last" id="ultimaCargaTransito"></div>
+        <input type="file" id="fileInputTransito" accept=".xlsx,.xls" hidden>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi blue"><div class="v" id="kTotalBuffer">0</div><div class="l">Referencias monitoreadas</div></div>
+      <div class="kpi alert"><div class="v" id="kCriticos">0</div><div class="l">En zona crítica</div></div>
+      <div class="kpi warn"><div class="v" id="kAlerta">0</div><div class="l">En zona de alerta</div></div>
+      <div class="kpi"><div class="v" id="kSinAmortiguador">0</div><div class="l">Sin amortiguador definido</div></div>
+    </div>
+
+    <div class="filters">
+      <input type="search" id="fBuscarBuffer" placeholder="Buscar referencia, tipo o proveedor…" oninput="render()">
+      <select id="fEstadoBuffer" onchange="render()">
+        <option value="">Todos los estados</option>
+        <option value="roja">Crítico</option>
+        <option value="amarilla">Alerta</option>
+        <option value="verde">OK</option>
+        <option value="na">Sin amortiguador</option>
+      </select>
+      <select id="fTipoBuffer" onchange="render()"><option value="">Todos los tipos</option></select>
+      <select id="fOrdenBuffer" onchange="render()">
+        <option value="zona">Ordenar: Más crítico primero</option>
+        <option value="referencia">Ordenar: Referencia</option>
+        <option value="tipo">Ordenar: Tipo / Cliente</option>
+        <option value="llegada">Ordenar: Fecha estimada de llegada</option>
+      </select>
+      <span class="count" id="countFiltroBuffer"></span>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Referencia</th><th>Tipo / Cliente</th>
+          <th class="num">Amortiguador</th><th class="num">Inv. en sitio</th>
+          <th class="num">Inv. en tránsito</th><th>F. estimada llegada</th>
+          <th>Proveedor</th><th>Estado</th>
+        </tr></thead>
+        <tbody id="bodyBuffer"></tbody>
+      </table>
+      <div class="empty" id="emptyBuffer" hidden>
+        <strong>No hay referencias de Producto Terminado monitoreadas</strong>
+        Carga el archivo Base de materiales/producto terminado para comenzar.
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast" role="status"></div>
+
+<script>
+const ESTADOS = ['En proceso sin novedad','Con Novedad','Entregada'];
+const LS_FALLBACK = 'coditeq_tablero_op_magda_v1';
+let DB = { ordenes:{}, ultimaCarga:null, amortiguadores:{}, ultimaCargaBuffer:null, ultimaCargaSitio:null, ultimaCargaTransito:null };
+let ALCANCE = { comercial: COMERCIAL_INICIAL, clientes: ALCANCE_INICIAL.slice() };
+let ALCANCE_SET = new Set();
+let tabActual = 'principal';
+let db = null;            // Firestore
+let modoNube = false;
+let renderPendiente = false;
+
+function normCliente(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim(); }
+function actualizarAlcanceSet(){ ALCANCE_SET = new Set((ALCANCE.clientes||[]).map(normCliente)); }
+function enAlcance(nombreCliente){ return ALCANCE_SET.has(normCliente(nombreCliente)); }
+actualizarAlcanceSet();
+
+function slugClave(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'X'; }
+function claveBuffer(referencia,tipo){ return (slugClave(referencia)+'__'+slugClave(tipo)).slice(0,200); }
+function zonaBuffer(sitio,amortiguador){
+  if(amortiguador==null||amortiguador<=0) return 'na';
+  const pct=(sitio||0)/amortiguador;
+  return pct<0.33?'roja':(pct<0.66?'amarilla':'verde');
+}
+const ZONA_LABEL={roja:'Crítico',amarilla:'Alerta',verde:'OK',na:'Sin amortiguador'};
+function renderBufferTabla(items,ids){
+  if(ids.kTotal) document.getElementById(ids.kTotal).textContent=items.length;
+  if(ids.kCriticos) document.getElementById(ids.kCriticos).textContent=items.filter(b=>b.zona==='roja').length;
+  if(ids.kAlerta) document.getElementById(ids.kAlerta).textContent=items.filter(b=>b.zona==='amarilla').length;
+  if(ids.kSinAmort) document.getElementById(ids.kSinAmort).textContent=items.filter(b=>b.zona==='na').length;
+
+  const selTipo=document.getElementById(ids.fTipo); const valTipo=selTipo.value;
+  const tipos=[...new Set(items.map(b=>b.tipo).filter(Boolean))].sort();
+  selTipo.innerHTML='<option value="">Todos los tipos</option>'+tipos.map(t=>`<option${t===valTipo?' selected':''}>${esc(t)}</option>`).join('');
+
+  const q=document.getElementById(ids.fBuscar).value.toLowerCase();
+  const fe=document.getElementById(ids.fEstado).value;
+  const ft=document.getElementById(ids.fTipo).value;
+  const ord=document.getElementById(ids.fOrden).value;
+  let lista=items.filter(b=>{
+    if(fe&&b.zona!==fe) return false;
+    if(ft&&b.tipo!==ft) return false;
+    if(q){ const blob=`${b.referencia} ${b.tipo} ${b.proveedor}`.toLowerCase(); if(!blob.includes(q)) return false; }
+    return true;
+  });
+  const ordenZona={roja:0,amarilla:1,na:2,verde:3};
+  const cmp={
+    zona:(a,b)=>(ordenZona[a.zona]-ordenZona[b.zona])||((a.pct??9)-(b.pct??9)),
+    referencia:(a,b)=>(a.referencia||'').localeCompare(b.referencia||''),
+    tipo:(a,b)=>(a.tipo||'').localeCompare(b.tipo||''),
+    llegada:(a,b)=>(a.fechaLlegada||'9999').localeCompare(b.fechaLlegada||'9999')
+  }[ord];
+  lista.sort(cmp);
+  document.getElementById(ids.countFiltro).textContent=`${lista.length} de ${items.length} referencias`;
+
+  document.getElementById(ids.body).innerHTML=lista.map(b=>{
+    const transitoTotal=(b.inventarioTransito||0)+(b.transitoProduccion||0);
+    const desgloseTransito=`Proveedor: ${fmtNum(b.inventarioTransito||0)} · Producción (OP activas): ${fmtNum(b.transitoProduccion||0)}`;
+    return `<tr>
+      <td><span class="op">${esc(b.referencia)}</span></td>
+      <td>${esc(b.tipo)||'—'}</td>
+      <td class="mono num">${b.amortiguador!=null?fmtNum(b.amortiguador):'—'}${b.unidad?(' '+esc(b.unidad)):''}</td>
+      <td class="mono num">${fmtNum(b.inventarioSitio)}${b.unidad?(' '+esc(b.unidad)):''}</td>
+      <td class="mono num" title="${esc(desgloseTransito)}">${fmtNum(transitoTotal)}${b.unidad?(' '+esc(b.unidad)):''}</td>
+      <td class="mono">${fmtFecha(b.fechaLlegada)}</td>
+      <td style="font-size:12px">${esc(b.proveedor)||'—'}</td>
+      <td><span class="zona ${b.zona}">${ZONA_LABEL[b.zona]}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById(ids.empty).hidden=lista.length>0;
+}
+
+/* ---------- Clave de acceso ---------- */
+function verificarClave(){
+  const v=document.getElementById('gateInput').value;
+  if(v===CLAVE_ACCESO){
+    sessionStorage.setItem('op_gate_ok','1');
+    document.getElementById('gate').style.display='none';
+  }else{
+    document.getElementById('gateErr').textContent='Clave incorrecta. Intenta de nuevo.';
+  }
+}
+document.getElementById('gateInput').addEventListener('keydown',e=>{ if(e.key==='Enter') verificarClave(); });
+if(sessionStorage.getItem('op_gate_ok')==='1') document.getElementById('gate').style.display='none';
+
+/* ---------- Utilidades ---------- */
+function hoyISO(){ const d=new Date(); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); }
+function toISO(y,mo,d){ return [y,String(mo).padStart(2,'0'),String(d).padStart(2,'0')].join('-'); }
+function parseFecha(v){
+  if(v==null||v==='') return null;
+  if(v instanceof Date && !isNaN(v)) return toISO(v.getFullYear(),v.getMonth()+1,v.getDate());
+  if(typeof v==='number'){ const ms=Math.round((v-25569)*86400000); const d=new Date(ms);
+    return toISO(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate()); }
+  const s=String(v).trim();
+  let m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/); if(m) return toISO(+m[3],+m[2],+m[1]);
+  m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/); if(m) return toISO(+m[1],+m[2],+m[3]);
+  return null;
+}
+function fmtFecha(iso){ if(!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}-${m}-${y}`; }
+function diffDias(a,b){ if(!a||!b) return null; return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000); }
+function fmtNum(n){ return (n==null||n==='')?'—':Number(n).toLocaleString('es-CO'); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function setConexion(estado,txt){ const el=document.getElementById('estadoConexion'); el.className='conexion '+estado; el.textContent=txt; }
+
+/* ---------- Firebase / persistencia ---------- */
+function firebaseConfigurado(){ return FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.includes('PEGA_AQUI'); }
+
+function iniciar(){
+  if(firebaseConfigurado()){
+    try{
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db=firebase.firestore();
+      modoNube=true;
+      setConexion('on','En línea · sincronizado');
+
+      let alcanceListo=false;
+      db.collection(COLECCION_OP).onSnapshot(snap=>{
+        const ordenes={}; let meta=null, alcanceDoc=null;
+        snap.forEach(doc=>{
+          if(doc.id==='__meta__') meta=doc.data();
+          else if(doc.id==='__alcance__') alcanceDoc=doc.data();
+          else ordenes[doc.id]=doc.data();
+        });
+        DB.ordenes=ordenes;
+        if(meta) DB.ultimaCarga=meta.ultimaCarga||null;
+        if(alcanceDoc){ ALCANCE=alcanceDoc; actualizarAlcanceSet(); alcanceListo=true; }
+        else if(!alcanceListo){
+          // Primera vez que se conecta: siembra en Firestore el alcance embebido en este archivo
+          db.collection(COLECCION_OP).doc('__alcance__').set(ALCANCE).catch(()=>{});
+          alcanceListo=true;
+        }
+        renderSeguro();
+      }, err=>{
+        setConexion('off','Sin conexión · revisa reglas de Firestore');
+        toast('Error de sincronización (OP): '+err.message);
+      });
+
+      let bufferListo=false;
+      db.collection(COLECCION_BUFFER).onSnapshot(snap=>{
+        const amortiguadores={}; let metaBuf=null;
+        snap.forEach(doc=>{
+          if(doc.id==='__meta__') metaBuf=doc.data();
+          else amortiguadores[doc.id]=doc.data();
+        });
+        DB.amortiguadores=amortiguadores;
+        if(metaBuf){
+          DB.ultimaCargaBuffer=metaBuf.ultimaCargaBuffer||null;
+          DB.ultimaCargaSitio=metaBuf.ultimaCargaSitio||null;
+          DB.ultimaCargaTransito=metaBuf.ultimaCargaTransito||null;
+          bufferListo=true;
+        }else if(!bufferListo){
+          // Primera vez que se conecta: siembra en Firestore la lista de referencias embebida en este archivo
+          const batch=db.batch();
+          BUFFER_INICIAL.forEach(b=>{
+            const key=claveBuffer(b.referencia,b.tipo);
+            batch.set(db.collection(COLECCION_BUFFER).doc(key),{
+              referencia:b.referencia, tipo:b.tipo, amortiguador:b.amortiguador, origen:b.origen||'PT',
+              inventarioSitio:0, inventarioTransito:0, transitoProduccion:0, fechaLlegada:null, proveedor:''
+            });
+          });
+          batch.commit().catch(()=>{});
+          bufferListo=true;
+        }
+        renderSeguro();
+      }, err=>{
+        toast('Error de sincronización (amortiguadores): '+err.message);
+      });
+    }catch(e){
+      setConexion('off','Error de configuración Firebase');
+      modoLocal();
+    }
+  }else{
+    document.getElementById('configAviso').style.display='block';
+    setConexion('config','Modo local (sin Firebase)');
+    modoLocal();
+  }
+}
+function modoLocal(){
+  modoNube=false;
+  try{
+    const raw=localStorage.getItem(LS_FALLBACK);
+    if(raw){
+      const data=JSON.parse(raw);
+      DB.ordenes=data.ordenes||{};
+      DB.ultimaCarga=data.ultimaCarga||null;
+      if(data.alcance){ ALCANCE=data.alcance; actualizarAlcanceSet(); }
+      if(data.amortiguadores && Object.keys(data.amortiguadores).length){
+        DB.amortiguadores=data.amortiguadores;
+      }else{
+        DB.amortiguadores={};
+        BUFFER_INICIAL.forEach(b=>{
+          const key=claveBuffer(b.referencia,b.tipo);
+          DB.amortiguadores[key]={referencia:b.referencia, tipo:b.tipo, amortiguador:b.amortiguador, origen:b.origen||'PT',
+            inventarioSitio:0, inventarioTransito:0, transitoProduccion:0, fechaLlegada:null, proveedor:''};
+        });
+      }
+      DB.ultimaCargaBuffer=data.ultimaCargaBuffer||null;
+      DB.ultimaCargaSitio=data.ultimaCargaSitio||null;
+      DB.ultimaCargaTransito=data.ultimaCargaTransito||null;
+    }else{
+      DB.amortiguadores={};
+      BUFFER_INICIAL.forEach(b=>{
+        const key=claveBuffer(b.referencia,b.tipo);
+        DB.amortiguadores[key]={referencia:b.referencia, tipo:b.tipo, amortiguador:b.amortiguador, origen:b.origen||'PT',
+          inventarioSitio:0, inventarioTransito:0, transitoProduccion:0, fechaLlegada:null, proveedor:''};
+      });
+    }
+  }catch(e){}
+  render();
+}
+function guardarLocalFallback(){
+  try{ localStorage.setItem(LS_FALLBACK, JSON.stringify({
+    ordenes:DB.ordenes, ultimaCarga:DB.ultimaCarga,
+    amortiguadores:DB.amortiguadores, ultimaCargaBuffer:DB.ultimaCargaBuffer,
+    ultimaCargaSitio:DB.ultimaCargaSitio, ultimaCargaTransito:DB.ultimaCargaTransito,
+    alcance:ALCANCE
+  })); }catch(e){}
+}
+function guardarOrden(op){
+  if(modoNube){
+    db.collection(COLECCION_OP).doc(op).set(DB.ordenes[op],{merge:true})
+      .catch(e=>toast('No se pudo guardar en la nube: '+e.message));
+  }else{ guardarLocalFallback(); }
+}
+function guardarMeta(){
+  if(modoNube){
+    db.collection(COLECCION_OP).doc('__meta__').set({ultimaCarga:DB.ultimaCarga},{merge:true}).catch(()=>{});
+  }else{ guardarLocalFallback(); }
+}
+function guardarMetaBuffer(){
+  if(modoNube){
+    db.collection(COLECCION_BUFFER).doc('__meta__').set({
+      ultimaCargaBuffer:DB.ultimaCargaBuffer, ultimaCargaSitio:DB.ultimaCargaSitio, ultimaCargaTransito:DB.ultimaCargaTransito
+    },{merge:true}).catch(()=>{});
+  }else{ guardarLocalFallback(); }
+}
+async function guardarBufferLote(claves){
+  if(modoNube){
+    for(let i=0;i<claves.length;i+=400){
+      const batch=db.batch();
+      claves.slice(i,i+400).forEach(k=>batch.set(db.collection(COLECCION_BUFFER).doc(k),DB.amortiguadores[k],{merge:true}));
+      await batch.commit();
+    }
+  }else{ guardarLocalFallback(); }
+}
+function guardarAlcance(){
+  if(modoNube){
+    db.collection(COLECCION_OP).doc('__alcance__').set(ALCANCE)
+      .catch(e=>toast('No se pudo guardar la lista de clientes: '+e.message));
+  }else{ guardarLocalFallback(); }
+}
+
+/* Evita que la sincronización borre lo que estás escribiendo:
+   si hay un campo de la tabla con foco, el repintado espera hasta que salgas del campo. */
+function renderSeguro(){
+  const ae=document.activeElement;
+  const editando=ae && (ae.classList.contains('novedad')||ae.classList.contains('estado')||ae.classList.contains('fecha-real'));
+  if(editando){ renderPendiente=true; ae.addEventListener('blur',()=>{ if(renderPendiente){renderPendiente=false; render();} },{once:true}); }
+  else render();
+}
+
+/* ---------- Carga de Excel ---------- */
+const fileInput=document.getElementById('fileInput'), dz=document.getElementById('dropzone');
+dz.addEventListener('click',()=>fileInput.click());
+dz.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();fileInput.click();} });
+['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
+dz.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) procesarArchivo(f); });
+fileInput.addEventListener('change',()=>{ if(fileInput.files[0]) procesarArchivo(fileInput.files[0]); fileInput.value=''; });
+
+const fileInputAlcance=document.getElementById('fileInputAlcance');
+fileInputAlcance.addEventListener('change',()=>{ if(fileInputAlcance.files[0]) procesarArchivoAlcance(fileInputAlcance.files[0]); fileInputAlcance.value=''; });
+
+function activarTarjeta(dz,input,handler){
+  dz.addEventListener('click',()=>input.click());
+  dz.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();input.click();} });
+  ['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
+  dz.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) handler(f); });
+  input.addEventListener('change',()=>{ if(input.files[0]) handler(input.files[0]); input.value=''; });
+}
+activarTarjeta(document.getElementById('dropzoneBuffer'),document.getElementById('fileInputBuffer'),procesarArchivoBuffer);
+activarTarjeta(document.getElementById('dropzoneSitio'),document.getElementById('fileInputSitio'),procesarArchivoSitio);
+activarTarjeta(document.getElementById('dropzoneTransito'),document.getElementById('fileInputTransito'),procesarArchivoTransito);
+
+function normKey(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+
+async function procesarArchivo(file){
+  const buf=await file.arrayBuffer();
+  try{
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:true});
+    if(!rows.length){ toast('El archivo no tiene filas de datos.'); return; }
+
+    const keys=Object.keys(rows[0]);
+    const buscar=(...frags)=>keys.find(k=>{const n=normKey(k); return frags.every(f=>n.includes(f));});
+    const map={
+      op: buscar('codigo','op')||buscar('op'),
+      np: buscar('numero','np')||buscar('np'),
+      cliente: buscar('cliente'), desc: buscar('descripcion'),
+      oc: buscar('orden','compra'), cant: buscar('cantidad'),
+      fCre: keys.find(k=>{const n=normKey(k);return n.includes('fecha')&&n.includes('creacion')&&!n.includes('np');}),
+      fEnt: buscar('fecha','entrega'), prior: buscar('prioridad'),
+      centro: buscar('centro','proceso'), tipo: buscar('tipo','orden'),
+      metros: buscar('metros'), ficha: buscar('ficha')
+    };
+    if(!map.op||!map.fCre||!map.fEnt){
+      toast('No se reconocieron las columnas “Código OP”, “Fecha de Creación” o “Fecha de Entrega”.'); return;
+    }
+
+    let nuevas=0, actualizadas=0, fueraAlcance=0;
+    const cambios=[];
+    rows.forEach(r=>{
+      const op=String(r[map.op]??'').trim();
+      if(!op) return;
+      const base={
+        op, np:String(r[map.np]??'').trim(),
+        cliente:String(r[map.cliente]??'').trim(),
+        descripcion:String(r[map.desc]??'').trim(),
+        oc:String(r[map.oc]??'').trim(),
+        cantidad:Number(String(r[map.cant]??'').replace(/[^\d.-]/g,''))||0,
+        fechaCreacion:parseFecha(r[map.fCre]),
+        fechaEntrega:parseFecha(r[map.fEnt]),
+        prioridad:String(r[map.prior]??'').trim(),
+        centro:String(r[map.centro]??'').trim(),
+        tipoOrden:String(r[map.tipo]??'').trim(),
+        metros:Number(String(r[map.metros]??'').replace(/[^\d.-]/g,''))||null,
+        ficha:String(r[map.ficha]??'').trim()
+      };
+      if(!enAlcance(base.cliente)){ fueraAlcance++; return; }
+      if(DB.ordenes[op]){ Object.assign(DB.ordenes[op],base); actualizadas++; }
+      else{ DB.ordenes[op]={...base,estado:'En proceso sin novedad',novedad:'',fechaRealEntrega:null,fechaIngreso:hoyISO()}; nuevas++; }
+      cambios.push(op);
+    });
+    DB.ultimaCarga={fecha:new Date().toLocaleString('es-CO'),archivo:file.name,filas:rows.length};
+
+    if(modoNube){
+      // Escritura por lotes (límite Firestore: 500 operaciones por lote)
+      for(let i=0;i<cambios.length;i+=400){
+        const batch=db.batch();
+        cambios.slice(i,i+400).forEach(op=>batch.set(db.collection(COLECCION_OP).doc(op),DB.ordenes[op],{merge:true}));
+        await batch.commit();
+      }
+      guardarMeta();
+    }else{
+      guardarLocalFallback();
+      render();
+    }
+    const cambiosBuffer=recalcularTransitoProduccionDesdeFilas(rows,map);
+    if(cambiosBuffer.length){
+      await guardarBufferLote(cambiosBuffer);
+      guardarMetaBuffer();
+    }
+    const sufijoAlcance=fueraAlcance?` · ${fueraAlcance} fuera del alcance de ${ALCANCE.comercial||'este comercial'} (no se cargaron)`:'';
+    const sufijoBuffer=cambiosBuffer.length?` · ${cambiosBuffer.length} referencias MP/PT con tránsito de producción actualizado`:'';
+    toast(`Excel cargado: ${nuevas} OP nuevas · ${actualizadas} actualizadas${sufijoAlcance}${sufijoBuffer}`);
+    if(!modoNube) render();
+  }catch(err){ toast('Error al leer el archivo: '+err.message); }
+}
+
+/* ---------- Carga de Excel: lista de clientes asignados (alcance) ---------- */
+async function procesarArchivoAlcance(file){
+  const buf=await file.arrayBuffer();
+  try{
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:true});
+    if(!rows.length){ toast('El archivo no tiene filas de datos.'); return; }
+    const keys=Object.keys(rows[0]);
+    const colCliente=keys.find(k=>normKey(k).includes('cliente'))||keys[0];
+    const colVendedor=keys.find(k=>normKey(k).includes('vendedor')||normKey(k).includes('comercial'));
+    const clientes=[...new Set(rows.map(r=>String(r[colCliente]??'').trim()).filter(Boolean))];
+    if(!clientes.length){ toast('No se encontraron nombres de cliente en el archivo.'); return; }
+    let comercial=ALCANCE.comercial;
+    if(colVendedor){ const v=rows.map(r=>String(r[colVendedor]??'').trim()).find(Boolean); if(v) comercial=v; }
+    ALCANCE={ comercial, clientes };
+    actualizarAlcanceSet();
+    guardarAlcance();
+    render();
+    toast(`Lista de clientes actualizada: ${clientes.length} clientes asignados a ${comercial}.`);
+  }catch(err){ toast('Error al leer el archivo: '+err.message); }
+}
+
+/* ---------- Carga de Excel: Amortiguadores (referencias especiales) ---------- */
+function refKeyLookup(){
+  // Índice referencia normalizada -> lista de claves de DB.amortiguadores que la usan (puede tener varios "tipo")
+  const idx={};
+  Object.entries(DB.amortiguadores).forEach(([key,b])=>{
+    const r=normCliente(b.referencia);
+    (idx[r]=idx[r]||[]).push(key);
+  });
+  return idx;
+}
+
+// Recalcula, desde cero, cuánta "Cantidad Etiquetas" de OP activas (no Entregadas) coincide con cada
+// referencia de Producto Terminado (MP/PT) por su "Descripción Producto". Se recalcula completo cada vez
+// (no se acumula) para que no se duplique al subir el Excel de OP varios días seguidos. El resultado se
+// guarda en transitoProduccion y se suma a inventarioTransito solo para mostrarlo en pantalla.
+function recalcularTransitoProduccion(){
+  const idx={};
+  Object.entries(DB.amortiguadores).forEach(([key,b])=>{
+    if(b.origen!=='PT') return;
+    const r=normCliente(b.referencia);
+    (idx[r]=idx[r]||[]).push(key);
+  });
+  if(!Object.keys(idx).length) return [];
+
+  const sumas={}; // clave de amortiguador -> cantidad acumulada de OP activas
+  Object.values(DB.ordenes).forEach(o=>{
+    if(o.estado==='Entregada') return;
+    const r=normCliente(o.descripcion);
+    if(!idx[r]) return;
+    idx[r].forEach(key=>{ sumas[key]=(sumas[key]||0)+(o.cantidad||0); });
+  });
+
+  const cambios=[];
+  Object.entries(idx).forEach(([,keys])=>{
+    keys.forEach(key=>{
+      const nuevo=Math.round((sumas[key]||0)*100)/100;
+      if(DB.amortiguadores[key].transitoProduccion!==nuevo){
+        DB.amortiguadores[key].transitoProduccion=nuevo;
+        cambios.push(key);
+      }
+    });
+  });
+  return cambios;
+}
+
+// Igual que recalcularTransitoProduccion(), pero a partir de TODAS las filas del Excel recién cargado
+// (no solo las del alcance de Magda), porque producción interna como "CODITEQ CENTRAL" también repone
+// el amortiguador y no aparece en el tablero de OP. Si una fila corresponde a una OP que sí está en el
+// tablero (dentro del alcance) y ya fue marcada como Entregada, no se cuenta.
+function recalcularTransitoProduccionDesdeFilas(rows,map){
+  const idx={};
+  Object.entries(DB.amortiguadores).forEach(([key,b])=>{
+    if(b.origen!=='PT') return;
+    const r=normCliente(b.referencia);
+    (idx[r]=idx[r]||[]).push(key);
+  });
+  if(!Object.keys(idx).length) return [];
+
+  const sumas={};
+  rows.forEach(r=>{
+    const descripcion=String(r[map.desc]??'').trim();
+    const refNorm=normCliente(descripcion);
+    if(!idx[refNorm]) return;
+    const opCode=String(r[map.op]??'').trim();
+    const ordenExistente=opCode?DB.ordenes[opCode]:null;
+    if(ordenExistente && ordenExistente.estado==='Entregada') return;
+    const cant=Number(String(r[map.cant]??'').replace(/[^\d.-]/g,''))||0;
+    idx[refNorm].forEach(key=>{ sumas[key]=(sumas[key]||0)+cant; });
+  });
+
+  const cambios=[];
+  Object.entries(idx).forEach(([,keys])=>{
+    keys.forEach(key=>{
+      const nuevo=Math.round((sumas[key]||0)*100)/100;
+      if(DB.amortiguadores[key].transitoProduccion!==nuevo){
+        DB.amortiguadores[key].transitoProduccion=nuevo;
+        cambios.push(key);
+      }
+    });
+  });
+  return cambios;
+}
+
+async function procesarArchivoBuffer(file){
+  const buf=await file.arrayBuffer();
+  try{
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+    const hojas=wb.SheetNames.filter(n=>wb.Sheets[n]);
+    if(!hojas.length){ toast('El archivo no tiene hojas.'); return; }
+
+    const filasBase=[];
+    hojas.forEach(nombreHoja=>{
+      const ws=wb.Sheets[nombreHoja];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:true});
+      if(!rows.length) return;
+      const keys=Object.keys(rows[0]);
+      const buscar=(...frags)=>keys.find(k=>{const n=normKey(k); return frags.every(f=>n.includes(f));});
+      const colRef=buscar('referencia')||keys[0];
+      const colAmort=buscar('amortiguador');
+      const colTipo=buscar('tipo');
+      const origenHoja=normKey(nombreHoja).includes('terminado')?'PT':'MP';
+      rows.forEach(r=>{
+        const referencia=String(r[colRef]??'').trim();
+        if(!referencia) return;
+        const crudo=String(r[colAmort]??'').trim();
+        let amortiguador=null;
+        if(crudo && crudo.toUpperCase()!=='N/A'){
+          const n=Number(crudo.replace(/[^\d.-]/g,''));
+          if(!isNaN(n)) amortiguador=n;
+        }
+        const tipo=String(r[colTipo]??'').trim();
+        filasBase.push({referencia,tipo,amortiguador,origen:origenHoja});
+      });
+    });
+    if(!filasBase.length){ toast('No se encontraron filas con referencia en el archivo.'); return; }
+
+    let nuevas=0, actualizadas=0;
+    const cambios=[];
+    filasBase.forEach(b=>{
+      const key=claveBuffer(b.referencia,b.tipo);
+      if(DB.amortiguadores[key]){
+        DB.amortiguadores[key].referencia=b.referencia;
+        DB.amortiguadores[key].tipo=b.tipo;
+        DB.amortiguadores[key].amortiguador=b.amortiguador;
+        DB.amortiguadores[key].origen=b.origen;
+        actualizadas++;
+      }else{
+        DB.amortiguadores[key]={referencia:b.referencia, tipo:b.tipo, amortiguador:b.amortiguador, origen:b.origen,
+          inventarioSitio:0, inventarioTransito:0, transitoProduccion:0, fechaLlegada:null, proveedor:''};
+        nuevas++;
+      }
+      cambios.push(key);
+    });
+    DB.ultimaCargaBuffer={fecha:new Date().toLocaleString('es-CO'),archivo:file.name,filas:filasBase.length};
+
+    await guardarBufferLote(cambios);
+    guardarMetaBuffer();
+    if(!modoNube) render();
+    toast(`Lista de referencias: ${nuevas} nuevas · ${actualizadas} actualizadas.`);
+  }catch(err){ toast('Error al leer el archivo: '+err.message); }
+}
+
+async function procesarArchivoSitio(file){
+  const buf=await file.arrayBuffer();
+  try{
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:true});
+    if(!rows.length){ toast('El archivo no tiene filas de datos.'); return; }
+    const keys=Object.keys(rows[0]);
+    const buscar=(...frags)=>keys.find(k=>{const n=normKey(k); return frags.every(f=>n.includes(f));});
+    const colProducto=buscar('producto')||keys.find(k=>normKey(k).includes('descripcion'));
+    const colInventariada=buscar('cantidad','inventariada')||buscar('inventariada');
+    const colReservada=buscar('cantidad','reservada')||buscar('reservada');
+    const colUnidad=buscar('unidad');
+    if(!colProducto||!colInventariada){
+      toast('No se reconocieron las columnas "Producto" o "Cantidad inventariada".'); return;
+    }
+    const idx=refKeyLookup();
+    const sumas={}; // referencia normalizada -> {cant, unidad}
+    rows.forEach(r=>{
+      const prod=String(r[colProducto]??'');
+      const m=prod.match(/^\[(.*?)\]/);
+      if(!m) return;
+      const refNorm=normCliente(m[1]);
+      if(!idx[refNorm]) return; // no es una referencia monitoreada, se ignora
+      const inv=Number(String(r[colInventariada]??'').replace(/[^\d.-]/g,''))||0;
+      const res=colReservada?(Number(String(r[colReservada]??'').replace(/[^\d.-]/g,''))||0):0;
+      const unidad=colUnidad?String(r[colUnidad]??'').trim():'';
+      if(!sumas[refNorm]) sumas[refNorm]={cant:0,unidad};
+      sumas[refNorm].cant+=(inv-res);
+      if(unidad) sumas[refNorm].unidad=unidad;
+    });
+
+    let actualizadas=0;
+    const cambios=[];
+    Object.entries(sumas).forEach(([refNorm,{cant,unidad}])=>{
+      (idx[refNorm]||[]).forEach(key=>{
+        DB.amortiguadores[key].inventarioSitio=Math.round(cant*100)/100;
+        if(unidad) DB.amortiguadores[key].unidad=unidad;
+        cambios.push(key); actualizadas++;
+      });
+    });
+    if(!cambios.length){ toast('Ninguna fila coincidió con las referencias monitoreadas.'); return; }
+    DB.ultimaCargaSitio={fecha:new Date().toLocaleString('es-CO'),archivo:file.name,filas:rows.length};
+
+    await guardarBufferLote(cambios);
+    guardarMetaBuffer();
+    if(!modoNube) render();
+    toast(`Inventario en sitio actualizado: ${actualizadas} referencias.`);
+  }catch(err){ toast('Error al leer el archivo: '+err.message); }
+}
+
+async function procesarArchivoTransito(file){
+  const buf=await file.arrayBuffer();
+  try{
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:true});
+    if(!rows.length){ toast('El archivo no tiene filas de datos.'); return; }
+    const keys=Object.keys(rows[0]);
+    const buscar=(...frags)=>keys.find(k=>{const n=normKey(k); return frags.every(f=>n.includes(f));});
+    const colRef=buscar('referencia');
+    const colCant=buscar('cantidad','total')||buscar('cantidad');
+    const colFecha=keys.find(k=>{const n=normKey(k); return n.includes('fecha')&&n.includes('estimada');});
+    const colProveedor=buscar('proveedor')||buscar('nombre','proveedor');
+    if(!colRef||!colCant){
+      toast('No se reconocieron las columnas "Referencia" o "Cantidad Total".'); return;
+    }
+    const idx=refKeyLookup();
+    const sumas={}; // referencia normalizada -> {cant, fechaMin, proveedores:Set}
+    rows.forEach(r=>{
+      const refNorm=normCliente(r[colRef]);
+      if(!refNorm||!idx[refNorm]) return; // no es una referencia monitoreada, se ignora
+      const cant=Number(String(r[colCant]??'').replace(/[^\d.-]/g,''))||0;
+      const fecha=colFecha?parseFecha(r[colFecha]):null;
+      const prov=colProveedor?String(r[colProveedor]??'').trim():'';
+      if(!sumas[refNorm]) sumas[refNorm]={cant:0,fechaMin:null,proveedores:new Set()};
+      sumas[refNorm].cant+=cant;
+      if(fecha && (!sumas[refNorm].fechaMin || fecha<sumas[refNorm].fechaMin)) sumas[refNorm].fechaMin=fecha;
+      if(prov) sumas[refNorm].proveedores.add(prov);
+    });
+
+    let actualizadas=0;
+    const cambios=[];
+    Object.entries(sumas).forEach(([refNorm,{cant,fechaMin,proveedores}])=>{
+      (idx[refNorm]||[]).forEach(key=>{
+        DB.amortiguadores[key].inventarioTransito=Math.round(cant*100)/100;
+        DB.amortiguadores[key].fechaLlegada=fechaMin;
+        DB.amortiguadores[key].proveedor=[...proveedores].join(' / ');
+        cambios.push(key); actualizadas++;
+      });
+    });
+    if(!cambios.length){ toast('Ninguna fila coincidió con las referencias monitoreadas.'); return; }
+    DB.ultimaCargaTransito={fecha:new Date().toLocaleString('es-CO'),archivo:file.name,filas:rows.length};
+
+    await guardarBufferLote(cambios);
+    guardarMetaBuffer();
+    if(!modoNube) render();
+    toast(`Inventario en tránsito actualizado: ${actualizadas} referencias.`);
+  }catch(err){ toast('Error al leer el archivo: '+err.message); }
+}
+
+/* ---------- Acciones ---------- */
+function cambiarEstado(op,nuevo){
+  const o=DB.ordenes[op]; if(!o) return;
+  o.estado=nuevo;
+  if(nuevo==='Entregada'){
+    o.fechaRealEntrega=hoyISO();
+    toast(`OP ${op} marcada como entregada (${fmtFecha(o.fechaRealEntrega)}).`);
+  }else o.fechaRealEntrega=null;
+  guardarOrden(op);
+  const cambiosBuffer=recalcularTransitoProduccion();
+  if(cambiosBuffer.length) guardarBufferLote(cambiosBuffer).then(guardarMetaBuffer);
+  if(!modoNube) render();
+}
+function cambiarNovedad(op,txt){ const o=DB.ordenes[op]; if(!o) return; o.novedad=txt; guardarOrden(op); }
+function cambiarFechaReal(op,iso){ const o=DB.ordenes[op]; if(!o||!iso) return; o.fechaRealEntrega=iso; guardarOrden(op); if(!modoNube) render(); }
+function devolverATablero(op){
+  const o=DB.ordenes[op]; if(!o) return;
+  o.estado=o.novedad?'Con Novedad':'En proceso sin novedad';
+  o.fechaRealEntrega=null;
+  guardarOrden(op);
+  const cambiosBuffer=recalcularTransitoProduccion();
+  if(cambiosBuffer.length) guardarBufferLote(cambiosBuffer).then(guardarMetaBuffer);
+  if(!modoNube) render();
+  toast(`OP ${op} devuelta al tablero principal.`);
+}
+
+/* ---------- Render ---------- */
+function cambiarTab(t){
+  tabActual=t;
+  document.getElementById('vistaPrincipal').hidden=t!=='principal';
+  document.getElementById('vistaEntregadas').hidden=t!=='entregadas';
+  document.getElementById('vistaMateriales').hidden=t!=='materiales';
+  document.getElementById('vistaAmortiguadores').hidden=t!=='amortiguadores';
+  document.getElementById('tabPrincipal').classList.toggle('active',t==='principal');
+  document.getElementById('tabEntregadas').classList.toggle('active',t==='entregadas');
+  document.getElementById('tabMateriales').classList.toggle('active',t==='materiales');
+  document.getElementById('tabAmortiguadores').classList.toggle('active',t==='amortiguadores');
+  render();
+}
+
+function render(){
+  const todas=Object.values(DB.ordenes).filter(o=>enAlcance(o.cliente));
+  const activas=todas.filter(o=>o.estado!=='Entregada');
+  const entregadas=todas.filter(o=>o.estado==='Entregada');
+  const hoy=hoyISO();
+
+  document.getElementById('nombreComercial').textContent=ALCANCE.comercial||'—';
+  document.getElementById('totalAlcance').textContent=(ALCANCE.clientes||[]).length;
+  document.getElementById('countPrincipal').textContent=activas.length;
+  document.getElementById('countEntregadas').textContent=entregadas.length;
+  document.getElementById('ultimaCarga').textContent=DB.ultimaCarga
+    ? `Última carga: ${DB.ultimaCarga.archivo} · ${DB.ultimaCarga.fecha} · ${DB.ultimaCarga.filas} filas`
+    : 'Aún no se ha cargado ningún archivo.';
+
+  const sel=document.getElementById('fCentro'); const val=sel.value;
+  const centros=[...new Set(activas.flatMap(o=>(o.centro||'').split(',').map(s=>s.trim()).filter(Boolean)))].sort();
+  sel.innerHTML='<option value="">Todos los centros</option>'+centros.map(c=>`<option${c===val?' selected':''}>${esc(c)}</option>`).join('');
+
+  const conNov=activas.filter(o=>o.estado==='Con Novedad').length;
+  const venc=activas.filter(o=>o.fechaEntrega&&diffDias(hoy,o.fechaEntrega)<0).length;
+  const prox=activas.filter(o=>{const d=o.fechaEntrega?diffDias(hoy,o.fechaEntrega):null;return d!==null&&d>=0&&d<=3;}).length;
+  const proms=activas.map(o=>diffDias(o.fechaCreacion,o.fechaEntrega)).filter(d=>d!=null);
+  document.getElementById('kActivas').textContent=activas.length;
+  document.getElementById('kNovedad').textContent=conNov;
+  document.getElementById('kVencidas').textContent=venc;
+  document.getElementById('kProximas').textContent=prox;
+  document.getElementById('kPromedio').textContent=proms.length?Math.round(proms.reduce((a,b)=>a+b,0)/proms.length):'—';
+  document.getElementById('kCriticosMP').textContent=Object.values(DB.amortiguadores).filter(b=>zonaBuffer(b.inventarioSitio,b.amortiguador)==='roja').length;
+
+  const q=document.getElementById('fBuscar').value.toLowerCase();
+  const fe=document.getElementById('fEstado').value;
+  const fc=document.getElementById('fCentro').value;
+  const ord=document.getElementById('fOrden').value;
+  let lista=activas.filter(o=>{
+    if(fe&&o.estado!==fe) return false;
+    if(fc&&!(o.centro||'').includes(fc)) return false;
+    if(q){ const blob=`${o.op} ${o.np} ${o.cliente} ${o.descripcion} ${o.oc}`.toLowerCase(); if(!blob.includes(q)) return false; }
+    return true;
+  });
+  const cmp={
+    entrega:(a,b)=>(a.fechaEntrega||'9999').localeCompare(b.fechaEntrega||'9999'),
+    restantes:(a,b)=>(diffDias(hoy,a.fechaEntrega)??9e9)-(diffDias(hoy,b.fechaEntrega)??9e9),
+    asignados:(a,b)=>(diffDias(a.fechaCreacion,a.fechaEntrega)??9e9)-(diffDias(b.fechaCreacion,b.fechaEntrega)??9e9),
+    cliente:(a,b)=>(a.cliente||'').localeCompare(b.cliente||''),
+    op:(a,b)=>(a.op||'').localeCompare(b.op||'',undefined,{numeric:true})
+  }[ord];
+  lista.sort(cmp);
+  document.getElementById('countFiltro').textContent=`${lista.length} de ${activas.length} OP`;
+
+  document.getElementById('bodyPrincipal').innerHTML=lista.map(o=>{
+    const asig=diffDias(o.fechaCreacion,o.fechaEntrega);
+    const rest=o.fechaEntrega?diffDias(hoy,o.fechaEntrega):null;
+    const restCls=rest==null?'asig':(rest<0?'bad':(rest<=3?'warn':'ok'));
+    const eCls=o.estado==='Con Novedad'?'e-novedad':'e-proceso';
+    return `<tr>
+      <td><span class="op">${esc(o.op)}</span><span class="np">${esc(o.np)}</span></td>
+      <td><span class="cliente">${esc(o.cliente)}</span><span class="prod" title="${esc(o.descripcion)}">${esc(o.descripcion)}</span></td>
+      <td class="mono num">${fmtNum(o.cantidad)}</td>
+      <td class="mono">${fmtFecha(o.fechaCreacion)}</td>
+      <td class="mono">${fmtFecha(o.fechaEntrega)}</td>
+      <td class="num"><span class="dias asig">${asig??'—'}</span></td>
+      <td class="num"><span class="dias ${restCls}">${rest??'—'}</span></td>
+      <td><select class="estado ${eCls}" onchange="cambiarEstado('${esc(o.op)}',this.value)">
+        ${ESTADOS.map(s=>`<option${s===o.estado?' selected':''}>${s}</option>`).join('')}
+      </select></td>
+      <td><textarea class="novedad ${o.novedad?'tiene':''}" rows="1" placeholder="Escribe la novedad…"
+        onchange="cambiarNovedad('${esc(o.op)}',this.value)">${esc(o.novedad)}</textarea></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('emptyPrincipal').hidden=lista.length>0;
+
+  /* Entregadas */
+  const qE=document.getElementById('fBuscarEnt').value.toLowerCase();
+  let listaE=entregadas.filter(o=>{
+    if(qE){ const blob=`${o.op} ${o.np} ${o.cliente} ${o.descripcion}`.toLowerCase(); if(!blob.includes(qE)) return false; }
+    return true;
+  }).sort((a,b)=>(b.fechaRealEntrega||'').localeCompare(a.fechaRealEntrega||''));
+  document.getElementById('countFiltroEnt').textContent=`${listaE.length} de ${entregadas.length} OP`;
+
+  const aTiempo=entregadas.filter(o=>o.fechaRealEntrega&&o.fechaEntrega&&o.fechaRealEntrega<=o.fechaEntrega).length;
+  const reales=entregadas.map(o=>diffDias(o.fechaCreacion,o.fechaRealEntrega)).filter(d=>d!=null);
+  document.getElementById('kEntregadas').textContent=entregadas.length;
+  document.getElementById('kATiempo').textContent=aTiempo;
+  document.getElementById('kTarde').textContent=entregadas.length-aTiempo;
+  document.getElementById('kIndicador').textContent=entregadas.length?Math.round(aTiempo/entregadas.length*100)+'%':'—';
+  document.getElementById('kDiasReales').textContent=reales.length?Math.round(reales.reduce((a,b)=>a+b,0)/reales.length):'—';
+
+  document.getElementById('bodyEntregadas').innerHTML=listaE.map(o=>{
+    const asig=diffDias(o.fechaCreacion,o.fechaEntrega);
+    const realD=diffDias(o.fechaCreacion,o.fechaRealEntrega);
+    const cumple=o.fechaRealEntrega&&o.fechaEntrega&&o.fechaRealEntrega<=o.fechaEntrega;
+    return `<tr>
+      <td><span class="op">${esc(o.op)}</span><span class="np">${esc(o.np)}</span></td>
+      <td><span class="cliente">${esc(o.cliente)}</span><span class="prod" title="${esc(o.descripcion)}">${esc(o.descripcion)}</span></td>
+      <td class="mono num">${fmtNum(o.cantidad)}</td>
+      <td class="mono">${fmtFecha(o.fechaCreacion)}</td>
+      <td class="mono">${fmtFecha(o.fechaEntrega)}</td>
+      <td><input type="date" class="fecha-real" value="${o.fechaRealEntrega||''}" onchange="cambiarFechaReal('${esc(o.op)}',this.value)"></td>
+      <td class="num"><span class="dias asig">${asig??'—'}</span></td>
+      <td class="num"><span class="dias ${cumple?'ok':'bad'}">${realD??'—'}</span></td>
+      <td><span class="cumple ${cumple?'si':'no'}">${cumple?'A tiempo':'Tarde'}</span></td>
+      <td style="max-width:220px;font-size:12px;color:var(--ink-soft)">${esc(o.novedad)||'—'}</td>
+      <td><button class="btn ghost" title="Devolver al tablero principal" onclick="devolverATablero('${esc(o.op)}')">↩</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('emptyEntregadas').hidden=listaE.length>0;
+
+  const meses={};
+  entregadas.forEach(o=>{
+    if(!o.fechaRealEntrega) return;
+    const m=o.fechaRealEntrega.slice(0,7);
+    meses[m]=meses[m]||{t:0,ok:0};
+    meses[m].t++;
+    if(o.fechaEntrega&&o.fechaRealEntrega<=o.fechaEntrega) meses[m].ok++;
+  });
+  const NOMBRES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  document.getElementById('bodyMensual').innerHTML=Object.keys(meses).sort().reverse().map(m=>{
+    const {t,ok}=meses[m]; const [y,mo]=m.split('-');
+    const pct=Math.round(ok/t*100);
+    return `<tr><td style="font-family:var(--disp);font-weight:600">${NOMBRES[+mo-1]} ${y}</td>
+      <td class="mono num">${t}</td><td class="mono num">${ok}</td><td class="mono num">${t-ok}</td>
+      <td class="num"><span class="cumple ${pct>=80?'si':'no'}">${pct}%</span></td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:20px">Sin entregas registradas todavía</td></tr>';
+
+  /* --- Amortiguadores (MP/PT) --- */
+  const buffersTodos=Object.entries(DB.amortiguadores).map(([key,b])=>{
+    const total=(b.inventarioSitio||0)+(b.inventarioTransito||0);
+    const zona=zonaBuffer(b.inventarioSitio,b.amortiguador);
+    const pct=(b.amortiguador!=null && b.amortiguador>0)?(b.inventarioSitio||0)/b.amortiguador:null;
+    return {...b, key, total, zona, pct};
+  });
+  const buffersPT=buffersTodos.filter(b=>(b.origen||'PT')==='PT');
+  const buffersMP=buffersTodos.filter(b=>b.origen==='MP');
+
+  document.getElementById('countMateriales').textContent=buffersMP.length;
+  document.getElementById('countAmortiguadores').textContent=buffersPT.length;
+  document.getElementById('ultimaCargaBuffer').textContent=DB.ultimaCargaBuffer
+    ? `Última carga: ${DB.ultimaCargaBuffer.archivo} · ${DB.ultimaCargaBuffer.fecha}` : 'Aún no se ha cargado ningún archivo.';
+  document.getElementById('ultimaCargaSitio').textContent=DB.ultimaCargaSitio
+    ? `Última carga: ${DB.ultimaCargaSitio.archivo} · ${DB.ultimaCargaSitio.fecha}` : 'Aún no se ha cargado ningún archivo.';
+  document.getElementById('ultimaCargaTransito').textContent=DB.ultimaCargaTransito
+    ? `Última carga: ${DB.ultimaCargaTransito.archivo} · ${DB.ultimaCargaTransito.fecha}` : 'Aún no se ha cargado ningún archivo.';
+
+  renderBufferTabla(buffersPT,{kTotal:'kTotalBuffer',kCriticos:'kCriticos',kAlerta:'kAlerta',kSinAmort:'kSinAmortiguador',
+    fTipo:'fTipoBuffer',fBuscar:'fBuscarBuffer',fEstado:'fEstadoBuffer',fOrden:'fOrdenBuffer',countFiltro:'countFiltroBuffer',
+    body:'bodyBuffer',empty:'emptyBuffer'});
+
+  renderBufferTabla(buffersMP,{
+    fTipo:'fTipoBufferMP',fBuscar:'fBuscarBufferMP',fEstado:'fEstadoBufferMP',fOrden:'fOrdenBufferMP',countFiltro:'countFiltroBufferMP',
+    body:'bodyBufferMP',empty:'emptyBufferMP'});
+}
+
+/* ---------- Exportaciones ---------- */
+function exportarEntregadas(){
+  const entregadas=Object.values(DB.ordenes).filter(o=>o.estado==='Entregada'&&enAlcance(o.cliente));
+  if(!entregadas.length){ toast('No hay órdenes entregadas para exportar.'); return; }
+  const filas=entregadas.map(o=>({
+    'Código OP':o.op,'Número NP':o.np,'Cliente':o.cliente,'Descripción Producto':o.descripcion,
+    'Orden de Compra':o.oc,'Cantidad':o.cantidad,
+    'Fecha de Creación':fmtFecha(o.fechaCreacion),'Fecha de Entrega (plan)':fmtFecha(o.fechaEntrega),
+    'Fecha de Entrega real':fmtFecha(o.fechaRealEntrega),
+    'Días asignados':diffDias(o.fechaCreacion,o.fechaEntrega),
+    'Días reales':diffDias(o.fechaCreacion,o.fechaRealEntrega),
+    'Cumplimiento':(o.fechaRealEntrega&&o.fechaEntrega&&o.fechaRealEntrega<=o.fechaEntrega)?'A tiempo':'Tarde',
+    'Novedad':o.novedad
+  }));
+  const ws=XLSX.utils.json_to_sheet(filas);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Entregadas');
+  XLSX.writeFile(wb,`entregas_OP_${hoyISO()}.xlsx`);
+}
+function exportarRespaldo(){
+  const blob=new Blob([JSON.stringify({
+    ordenes:DB.ordenes, ultimaCarga:DB.ultimaCarga,
+    amortiguadores:DB.amortiguadores, ultimaCargaBuffer:DB.ultimaCargaBuffer,
+    ultimaCargaSitio:DB.ultimaCargaSitio, ultimaCargaTransito:DB.ultimaCargaTransito,
+    alcance:ALCANCE
+  },null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`respaldo_tablero_OP_magda_${hoyISO()}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Respaldo descargado.');
+}
+async function importarRespaldo(input){
+  const f=input.files[0]; if(!f) return;
+  try{
+    const data=JSON.parse(await f.text());
+    if(!data.ordenes) throw new Error('El archivo no es un respaldo válido.');
+    DB.ordenes=data.ordenes||{};
+    DB.ultimaCarga=data.ultimaCarga||null;
+    DB.amortiguadores=data.amortiguadores||{};
+    DB.ultimaCargaBuffer=data.ultimaCargaBuffer||null;
+    DB.ultimaCargaSitio=data.ultimaCargaSitio||null;
+    DB.ultimaCargaTransito=data.ultimaCargaTransito||null;
+    if(data.alcance){ ALCANCE=data.alcance; actualizarAlcanceSet(); }
+    recalcularTransitoProduccion();
+    if(modoNube){
+      const ops=Object.keys(DB.ordenes);
+      for(let i=0;i<ops.length;i+=400){
+        const batch=db.batch();
+        ops.slice(i,i+400).forEach(op=>batch.set(db.collection(COLECCION_OP).doc(op),DB.ordenes[op],{merge:true}));
+        await batch.commit();
+      }
+      guardarMeta();
+      await guardarBufferLote(Object.keys(DB.amortiguadores));
+      guardarMetaBuffer();
+      guardarAlcance();
+    }else{
+      guardarLocalFallback(); render();
+    }
+    toast(`Respaldo restaurado: ${Object.keys(DB.ordenes).length} OP, ${Object.keys(DB.amortiguadores).length} referencias MP/PT.`);
+  }catch(err){ toast('No se pudo restaurar: '+err.message); }
+  input.value='';
+}
+
+/* ---------- Toast ---------- */
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),4200);
+}
+
+/* ---------- Inicio ---------- */
+iniciar();
+</script>
+</body>
+</html>
