@@ -48,6 +48,33 @@
   .btn.ghost:hover{color:var(--azul)}
   .btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
 
+  /* ---- Modal guía rápida ---- */
+  #guiaOverlay{position:fixed;inset:0;background:rgba(27,36,48,.55);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px}
+  #guiaOverlay[hidden]{display:none}
+  #guiaModal{background:var(--card);border-radius:18px;width:100%;max-width:540px;box-shadow:0 20px 60px rgba(0,0,0,.22);overflow:hidden}
+  .guia-barra{display:flex;height:5px}
+  .guia-barra span{flex:1}
+  .guia-barra .c{background:var(--cyan)}.guia-barra .m{background:var(--magenta)}.guia-barra .y{background:var(--amarillo)}.guia-barra .k{background:var(--negro)}
+  .guia-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 0}
+  .guia-titulo{font-family:var(--disp);font-weight:700;font-size:15px;color:var(--azul)}
+  .guia-cerrar{background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink-soft);line-height:1;padding:2px 6px;border-radius:6px}
+  .guia-cerrar:hover{background:var(--paper);color:var(--ink)}
+  .guia-progress{display:flex;gap:6px;padding:14px 24px 0}
+  .guia-progress span{height:3px;flex:1;border-radius:99px;background:var(--line);transition:.25s}
+  .guia-progress span.done{background:var(--azul)}
+  .guia-body{padding:22px 24px 24px}
+  .guia-icono{font-size:28px;margin-bottom:12px;display:block}
+  .guia-body h2{font-family:var(--disp);font-weight:700;font-size:18px;margin-bottom:10px;color:var(--ink)}
+  .guia-body p{color:var(--ink-soft);font-size:13.5px;line-height:1.6;margin-bottom:14px}
+  .guia-ruta{background:var(--azul-claro);border:1px solid #D0DEFF;border-radius:10px;padding:13px 15px;margin-bottom:10px}
+  .guia-ruta .etq{font-family:var(--disp);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--azul);margin-bottom:5px}
+  .guia-ruta .ruta{font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6}
+  .guia-ruta .ruta b{color:var(--azul)}
+  .guia-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:2px}
+  .guia-footer{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-top:1px solid var(--line);background:var(--paper)}
+  .guia-pag{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft)}
+  .guia-nav{display:flex;gap:8px}
+
   main{max-width:1480px;margin:0 auto;padding:22px 28px 60px}
 
   .dropzone{border:2px dashed var(--line-strong);border-radius:12px;background:var(--card);padding:22px;text-align:center;
@@ -347,9 +374,30 @@
   </div>
   <div class="header-actions">
     <span class="conexion config" id="estadoConexion">Configurando…</span>
+    <button class="btn ghost" onclick="abrirGuia()">❓ Guía rápida</button>
     <button class="btn ghost" onclick="exportarRespaldo()">⬇ Respaldo</button>
   </div>
 </header>
+
+<!-- ============ MODAL GUÍA RÁPIDA ============ -->
+<div id="guiaOverlay" hidden onclick="if(event.target===this)cerrarGuia()">
+  <div id="guiaModal" role="dialog" aria-modal="true" aria-labelledby="guiaTitulo">
+    <div class="guia-barra"><span class="c"></span><span class="m"></span><span class="y"></span><span class="k"></span></div>
+    <div class="guia-header">
+      <span class="guia-titulo" id="guiaTitulo">Guía rápida — Tablero Magda</span>
+      <button class="guia-cerrar" onclick="cerrarGuia()" aria-label="Cerrar guía">×</button>
+    </div>
+    <div class="guia-progress" id="guiaProgress"></div>
+    <div class="guia-body" id="guiaBody"></div>
+    <div class="guia-footer">
+      <span class="guia-pag" id="guiaPag"></span>
+      <div class="guia-nav">
+        <button class="btn ghost" id="guiaAtras" onclick="guiaPaso(-1)">← Atrás</button>
+        <button class="btn primary" id="guiaSig" onclick="guiaPaso(1)">Siguiente →</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <main>
   <div id="configAviso">
@@ -1470,6 +1518,128 @@ function toast(msg){
 }
 
 /* ---------- Inicio ---------- */
+/* ============ GUÍA RÁPIDA ============ */
+const GUIA_PASOS = [
+  {
+    icono: '📋',
+    titulo: '¿Qué es este tablero?',
+    html: `<p>Herramienta de seguimiento de <b>órdenes de producción</b> de los clientes de <b>Magda Acosta</b>, con visibilidad del inventario de materiales y producto terminado especiales en tiempo real.</p>
+    <div class="guia-grid">
+      <div class="guia-ruta"><div class="etq">Tecnología</div><div class="ruta">Netlify + Firebase (nube)</div></div>
+      <div class="guia-ruta"><div class="etq">Estado</div><div class="ruta" style="color:var(--ok);font-weight:600">● En producción</div></div>
+    </div>`
+  },
+  {
+    icono: '📦',
+    titulo: 'Dónde descargar: Excel diario de OP',
+    html: `<p>Sube este archivo todos los días en la pestaña <b>Tablero principal</b>. Las OP nuevas se agregan, las existentes conservan su estado y novedad.</p>
+    <div class="guia-ruta">
+      <div class="etq">Ruta en Focuss</div>
+      <div class="ruta"><b>Focuss</b> → Producción → <b>OP Magda</b><br>Descargar el informe y subir aquí sin modificarlo.</div>
+    </div>
+    <div class="guia-ruta">
+      <div class="etq">¿Qué hace al subirlo?</div>
+      <div class="ruta">Filtra automáticamente los 85 clientes del alcance · Cruza con referencias de MP/PT y actualiza el tránsito de producción.</div>
+    </div>`
+  },
+  {
+    icono: '📋',
+    titulo: 'Dónde descargar: Lista de referencias (Base MP y PT)',
+    html: `<p>Define <b>qué referencias se monitorean</b> y su amortiguador (buffer). Se sube desde la pestaña <b>MP/PT</b>.</p>
+    <div class="guia-ruta">
+      <div class="etq">Archivo maestro</div>
+      <div class="ruta"><b>Base MP y PT.xlsx</b><br>Hoja 1: Base Materiales → aparece en pestaña <b>Materias Primas</b><br>Hoja 2: Base Producto Terminado → aparece en pestaña <b>MP/PT</b></div>
+    </div>
+    <div class="guia-ruta" style="border-color:#F2C94C;background:#FFFBEA">
+      <div class="etq" style="color:#A8650A">⚠ Importante</div>
+      <div class="ruta">Si agregas o eliminas una referencia, hazlo en este archivo maestro y vuelve a subirlo — nunca edites solo el tablero.</div>
+    </div>`
+  },
+  {
+    icono: '🏬',
+    titulo: 'Dónde descargar: Inventario en sitio',
+    html: `<p>Actualiza las cantidades disponibles en bodega de cada referencia monitoreada. Se sube desde la pestaña <b>MP/PT</b> (tarjeta "Inventario en sitio").</p>
+    <div class="guia-ruta">
+      <div class="etq">Ruta en Odoo</div>
+      <div class="ruta"><b>Odoo</b> → Inventario → Informes → <b>Lugares</b><br>Filtro por ubicación: <b>BOD1 / Existencias</b><br>Descargar el informe y subir aquí sin modificarlo.</div>
+    </div>
+    <div class="guia-ruta">
+      <div class="etq">¿Qué hace el tablero?</div>
+      <div class="ruta">Busca automáticamente las referencias monitoreadas, descuenta la cantidad reservada y actualiza el estado del amortiguador (OK / Alerta / Crítico).</div>
+    </div>`
+  },
+  {
+    icono: '🚚',
+    titulo: 'Dónde descargar: Inventario en tránsito',
+    html: `<p>Actualiza las cantidades que vienen en camino desde proveedores. Se sube desde la pestaña <b>MP/PT</b> (tarjeta "Inventario en tránsito").</p>
+    <div class="guia-ruta">
+      <div class="etq">Ruta en Focuss</div>
+      <div class="ruta"><b>Focuss</b> → Compras → <b>Tránsito Magda</b><br>Descargar el informe y subir aquí sin modificarlo.</div>
+    </div>
+    <div class="guia-ruta">
+      <div class="etq">Nota</div>
+      <div class="ruta">Si hay varias órdenes para la misma referencia, el tablero las suma automáticamente. La fecha de llegada que muestra es la más próxima.</div>
+    </div>`
+  },
+  {
+    icono: '💡',
+    titulo: 'Semáforo del amortiguador',
+    html: `<p>El estado de cada referencia en MP/PT se calcula comparando el <b>inventario en sitio</b> contra el <b>amortiguador</b> definido en el archivo maestro.</p>
+    <div class="guia-grid">
+      <div class="guia-ruta" style="background:#E8F5EC;border-color:#A8D5B5">
+        <div class="etq" style="color:var(--ok)">● OK</div>
+        <div class="ruta">Inventario ≥ 66% del amortiguador</div>
+      </div>
+      <div class="guia-ruta" style="background:var(--warn-bg);border-color:#F2C94C">
+        <div class="etq" style="color:var(--warn)">● Alerta</div>
+        <div class="ruta">Inventario entre 33% y 66%</div>
+      </div>
+      <div class="guia-ruta" style="background:var(--danger-bg);border-color:#F4A9A6">
+        <div class="etq" style="color:var(--danger)">● Crítico</div>
+        <div class="ruta">Inventario < 33% del amortiguador</div>
+      </div>
+      <div class="guia-ruta">
+        <div class="etq">Sin amortiguador</div>
+        <div class="ruta">No tiene buffer definido aún</div>
+      </div>
+    </div>
+    <p style="margin-top:12px;font-size:12px;color:var(--ink-soft)">El indicador "MP/PT en zona crítica" del Tablero principal muestra cuántas referencias están en rojo en este momento.</p>`
+  }
+];
+let guiaPasoActual = 0;
+
+function abrirGuia(){
+  guiaPasoActual = 0;
+  renderGuia();
+  document.getElementById('guiaOverlay').hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+function cerrarGuia(){
+  document.getElementById('guiaOverlay').hidden = true;
+  document.body.style.overflow = '';
+}
+function guiaPaso(dir){
+  const nuevo = guiaPasoActual + dir;
+  if(nuevo < 0) return;
+  if(nuevo >= GUIA_PASOS.length){ cerrarGuia(); return; }
+  guiaPasoActual = nuevo;
+  renderGuia();
+}
+function renderGuia(){
+  const paso = GUIA_PASOS[guiaPasoActual];
+  const total = GUIA_PASOS.length;
+  document.getElementById('guiaPag').textContent = `${guiaPasoActual + 1} / ${total}`;
+  document.getElementById('guiaAtras').style.visibility = guiaPasoActual === 0 ? 'hidden' : 'visible';
+  document.getElementById('guiaSig').textContent = guiaPasoActual === total - 1 ? 'Cerrar ✓' : 'Siguiente →';
+  document.getElementById('guiaProgress').innerHTML = GUIA_PASOS.map((_,i) =>
+    `<span class="${i <= guiaPasoActual ? 'done' : ''}"></span>`).join('');
+  document.getElementById('guiaBody').innerHTML = `
+    <span class="guia-icono">${paso.icono}</span>
+    <h2>${paso.titulo}</h2>
+    ${paso.html}`;
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape') cerrarGuia(); });
+
 iniciar();
 </script>
 </body>
