@@ -735,6 +735,23 @@ function setConexion(estado,txt){ const el=document.getElementById('estadoConexi
 function firebaseConfigurado(){ return FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.includes('PEGA_AQUI'); }
 
 function iniciar(){
+  // Siempre cargar caché local primero para que los datos aparezcan de inmediato
+  // (Firebase los actualizará en tiempo real cuando conecte — sin perder nada)
+  try{
+    const raw=localStorage.getItem(LS_FALLBACK);
+    if(raw){
+      const data=JSON.parse(raw);
+      DB.ordenes=data.ordenes||{};
+      DB.ultimaCarga=data.ultimaCarga||null;
+      DB.amortiguadores=data.amortiguadores||{};
+      DB.ultimaCargaBuffer=data.ultimaCargaBuffer||null;
+      DB.ultimaCargaSitio=data.ultimaCargaSitio||null;
+      DB.ultimaCargaTransito=data.ultimaCargaTransito||null;
+      if(data.alcance){ ALCANCE=data.alcance; actualizarAlcanceSet(); }
+      render(); // muestra datos del caché inmediatamente
+    }
+  }catch(e){}
+
   if(firebaseConfigurado()){
     try{
       firebase.initializeApp(FIREBASE_CONFIG);
@@ -753,11 +770,13 @@ function iniciar(){
         DB.ordenes=ordenes;
         if(meta) DB.ultimaCarga=meta.ultimaCarga||null;
         if(alcanceDoc){ ALCANCE=alcanceDoc; actualizarAlcanceSet(); alcanceListo=true; }
-        else if(!alcanceListo){
-          // Primera vez que se conecta: siembra en Firestore el alcance embebido en este archivo
+        else if(!alcanceListo && Object.keys(ordenes).length===0){
           db.collection(COLECCION_OP).doc('__alcance__').set(ALCANCE).catch(()=>{});
           alcanceListo=true;
+        }else if(!alcanceListo){
+          alcanceListo=true;
         }
+        guardarLocalFallback(); // siempre sincronizar caché local con lo que Firebase entrega
         renderSeguro();
       }, err=>{
         setConexion('off','Sin conexión · revisa reglas de Firestore');
@@ -777,8 +796,8 @@ function iniciar(){
           DB.ultimaCargaSitio=metaBuf.ultimaCargaSitio||null;
           DB.ultimaCargaTransito=metaBuf.ultimaCargaTransito||null;
           bufferListo=true;
-        }else if(!bufferListo){
-          // Primera vez que se conecta: siembra en Firestore la lista de referencias embebida en este archivo
+        }else if(!bufferListo && Object.keys(amortiguadores).length===0){
+          bufferListo=true;
           const batch=db.batch();
           BUFFER_INICIAL.forEach(b=>{
             const key=claveBuffer(b.referencia,b.tipo);
@@ -787,9 +806,14 @@ function iniciar(){
               inventarioSitio:0, inventarioTransito:0, transitoProduccion:0, fechaLlegada:null, proveedor:''
             });
           });
+          batch.set(db.collection(COLECCION_BUFFER).doc('__meta__'),{
+            ultimaCargaBuffer:null, ultimaCargaSitio:null, ultimaCargaTransito:null
+          });
           batch.commit().catch(()=>{});
+        }else if(!bufferListo){
           bufferListo=true;
         }
+        guardarLocalFallback(); // siempre sincronizar caché local con lo que Firebase entrega
         renderSeguro();
       }, err=>{
         toast('Error de sincronización (amortiguadores): '+err.message);
