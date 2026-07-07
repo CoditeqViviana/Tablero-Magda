@@ -1016,9 +1016,9 @@ function iniciar(){
       db.collection(COLECCION_VENTAS).onSnapshot(snap=>{
         let pres=null, vent=null, meta=null;
         snap.forEach(doc=>{
-          if(doc.id==='__presupuesto__') pres=doc.data();
-          else if(doc.id==='__ventas__') vent=doc.data();
-          else if(doc.id==='__meta__') meta=doc.data();
+          if(doc.id==='presupuesto') pres=doc.data();
+          else if(doc.id==='ventas') vent=doc.data();
+          else if(doc.id==='meta') meta=doc.data();
         });
         if(snap.empty && !ventasListo){
           ventasListo=true;
@@ -1555,9 +1555,9 @@ function sembrarVentasSiVacio(){
 function guardarVentasNube(){
   if(!modoNube) return;
   const batch=db.batch();
-  batch.set(db.collection(COLECCION_VENTAS).doc('__presupuesto__'),{datos:DB.presupuesto||null});
-  batch.set(db.collection(COLECCION_VENTAS).doc('__ventas__'),{datos:DB.ventas||null});
-  batch.set(db.collection(COLECCION_VENTAS).doc('__meta__'),{
+  batch.set(db.collection(COLECCION_VENTAS).doc('presupuesto'),{datos:DB.presupuesto||null});
+  batch.set(db.collection(COLECCION_VENTAS).doc('ventas'),{datos:DB.ventas||null});
+  batch.set(db.collection(COLECCION_VENTAS).doc('meta'),{
     ultimaCargaPresupuesto:DB.ultimaCargaPresupuesto||null, ultimaCargaVentas:DB.ultimaCargaVentas||null
   });
   batch.commit().catch(e=>toast('No se pudo guardar ventas en la nube: '+e.message));
