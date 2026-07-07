@@ -767,10 +767,10 @@
     <div class="seccion-titulo">Registrar acuerdo comercial</div>
     <div class="form-acuerdo">
       <label>Fecha<input type="date" id="acFecha"></label>
-      <label>Tipo de acuerdo<input list="listaTiposAcuerdo" id="acTipo" placeholder="Precio, descuento, volumen…"></label>
-      <label>Referencia de MP/PT<input list="listaReferenciasMP" id="acReferencia" placeholder="Referencia monitoreada o libre"></label>
+      <label>Tipo de acuerdo<input list="listaTiposAcuerdo" id="acTipo" placeholder="Precio, descuento, dedicado…"></label>
+      <label>Referencia de MP/PT<input type="text" id="acReferencia" placeholder="Escribe la referencia"></label>
       <label>Vigencia<input id="acVigencia" placeholder="Ej: 31/12/2026, 6 meses, indefinida"></label>
-      <label>Responsable de monitorear<input list="listaResponsables" id="acResponsable" placeholder="Nombre del responsable"></label>
+      <label>Responsable de monitorear<input type="text" id="acResponsable" placeholder="Escribe el responsable"></label>
       <label class="ancho">Descripción del acuerdo<textarea id="acDescripcion" rows="2" placeholder="Detalle del acuerdo…"></textarea></label>
       <div class="form-acciones">
         <button class="btn primary" onclick="guardarNuevoAcuerdo()">＋ Agregar acuerdo</button>
@@ -779,11 +779,9 @@
     </div>
     <datalist id="listaTiposAcuerdo">
       <option value="Precio"></option><option value="Descuento"></option><option value="Volumen"></option>
-      <option value="Inventario / Amortiguador"></option><option value="Exclusividad"></option>
+      <option value="Dedicado"></option><option value="Inventario / Amortiguador"></option><option value="Exclusividad"></option>
       <option value="Plazo de pago"></option><option value="Consignación"></option><option value="Otro"></option>
     </datalist>
-    <datalist id="listaReferenciasMP"></datalist>
-    <datalist id="listaResponsables"></datalist>
 
     <div class="seccion-titulo" style="margin-top:22px">Acuerdos registrados</div>
     <div class="filters">
@@ -1893,13 +1891,6 @@ function vigenciaEstado(vig){
   return {chip:'<span class="vig-chip ok">vigente</span>'};
 }
 function renderAcuerdos(){
-  const refs=[...new Set(Object.values(DB.amortiguadores||{}).map(b=>b.referencia).filter(Boolean))].sort();
-  const dlRef=document.getElementById('listaReferenciasMP');
-  if(dlRef) dlRef.innerHTML=refs.map(r=>`<option value="${esc(r)}"></option>`).join('');
-  const resps=[...new Set([ALCANCE.comercial,...Object.values(DB.acuerdos||{}).map(a=>a.responsable)].filter(Boolean))].sort();
-  const dlResp=document.getElementById('listaResponsables');
-  if(dlResp) dlResp.innerHTML=resps.map(r=>`<option value="${esc(r)}"></option>`).join('');
-
   const arr=Object.values(DB.acuerdos||{});
   document.getElementById('countAcuerdos').textContent=arr.length;
 
