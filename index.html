@@ -123,6 +123,31 @@
   .kpi .l{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
   .kpi.alert .v{color:var(--danger)} .kpi.warn .v{color:var(--warn)} .kpi.ok .v{color:var(--ok)} .kpi.blue .v{color:var(--azul)}
 
+  /* ---- Gráficas Ventas vs Presupuesto ---- */
+  .grafica-titulo{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink)}
+  .grafica{width:100%;margin-top:6px}
+  .grafica svg{width:100%;height:auto;display:block;overflow:visible}
+  .g-axis{stroke:var(--line);stroke-width:1}
+  .g-grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4}
+  .g-lbl{font-family:var(--mono);font-size:10px;fill:var(--ink-soft)}
+  .g-mes{font-family:var(--disp);font-size:11px;font-weight:600;fill:var(--ink)}
+  .g-bar-pres{fill:var(--line-strong)}
+  .g-bar-vent{fill:var(--azul)}
+  .g-bar-vent.curso{fill:var(--cyan)}
+  .g-bar:hover{opacity:.82}
+  .g-line-pres{fill:none;stroke:var(--line-strong);stroke-width:2.5}
+  .g-line-vent{fill:none;stroke:var(--azul);stroke-width:2.5}
+  .g-dot{fill:var(--azul)}
+  .g-area{fill:var(--azul);opacity:.06}
+  .leyenda{display:flex;gap:14px;flex-wrap:wrap}
+  .leyenda-item{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft)}
+  .leyenda-item i{width:12px;height:12px;border-radius:3px;display:inline-block}
+  .barra-avance{position:relative;height:16px;background:var(--line);border-radius:8px;overflow:hidden;min-width:120px}
+  .barra-avance span{position:absolute;left:0;top:0;bottom:0;border-radius:8px}
+  .barra-avance span.ok{background:var(--ok)} .barra-avance span.warn{background:var(--amarillo)} .barra-avance span.bajo{background:var(--danger)}
+  .cumpl-pill{font-family:var(--mono);font-weight:600;font-size:12px;padding:2px 8px;border-radius:20px}
+  .cumpl-pill.ok{background:var(--ok-bg);color:var(--ok)} .cumpl-pill.warn{background:var(--warn-bg);color:var(--warn)} .cumpl-pill.bajo{background:var(--danger-bg);color:var(--danger)}
+
   .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
   .filters input[type=search],.filters select{padding:8px 12px;border:1px solid var(--line-strong);border-radius:8px;
     font-family:var(--body);font-size:13px;background:var(--card)}
@@ -220,6 +245,7 @@
   // 3) Nombres de las colecciones en Firestore (no es necesario cambiarlos)
   const COLECCION_OP = "op_magda";
   const COLECCION_BUFFER = "amortiguadores_magda";
+  const COLECCION_VENTAS = "ventas_magda";
 
   // 4) Comercial al que pertenece este tablero y sus clientes asignados.
   //    Esto define el "alcance": solo las OP de estos clientes se cargarán al tablero.
@@ -352,6 +378,10 @@
     {referencia:"BL-PPBDURA-215X100-R1-M-1F-C30-CONTINUO", tipo:"Ecolab", amortiguador:32, origen:"PT"},
     {referencia:"BL-PPBM-130X100000-R1-M-1F-C30-ROLLO-CONTINUO", tipo:"Ecolab", amortiguador:100, origen:"PT"}
   ];
+
+  // ── Datos iniciales Ventas vs Presupuesto (se sobrescriben al cargar los Excel) ──
+  const PRESUPUESTO_INICIAL = {"anio":2026,"meses":[426769898,536790516,420863352,336010896,369522584,516177000,704449000,505186480,587060000,537320000,675802584,640490896],"clientes":{"AKZO NOBEL PERU S.A.C.":[0,0,9386028,0,0,11000000,0,0,0,13000000,0,0],"ANHIDRIDOS Y DERIVADOS DE COLOMBIA SAS":[26383625,36464000,64854000,40000000,27000000,55000000,60000000,42000000,37000000,50000000,45000000,55000000],"CAMPOFERT S.A.S":[0,2014584,2428000,0,2014584,2428000,0,2014584,2428000,0,2014584,2428000],"CARVAJAL SOLUCIONES DE COMUNICACION S.A.S.":[27429720,37678720,35745000,40000000,45000000,39000000,65000000,42000000,40000000,39000000,65000000,42000000],"CARVAJAL TECNOLOGIA Y SERVICIOS S.A.S. BIC":[765000,1326000,3000000,0,0,0,0,0,0,0,0,0],"COMPANIA GLOBAL DE PINTURAS SA":[119532050,14031642,15164100,37000000,25000000,42000000,35000000,28000000,17000000,40000000,45000000,50000000],"DISTRIBUIDORA DE VINOS Y LICORES SAS":[20776000,9886670,5311000,11000000,40000000,70000000,25000000,50000000,100000000,90000000,30000000,30000000],"ECOLAB COLOMBIA S.A.":[0,52383000,51687000,49000000,50000000,55000000,55000000,55000000,55000000,55000000,55000000,55000000],"ESENCIA & CO SAS":[0,9600000,0,0,0,0,9600000,0,0,0,9600000,0],"ESPECIALIDADES DIAGNOSTICAS IHR S.A.S.":[0,0,504000,0,0,0,0,0,0,0,0,0],"FINEAROM SAS":[1569000,1380000,1500000,0,1500000,0,2000000,0,1500000,0,1500000,0],"GIVAUDAN COLOMBIA SAS":[2336000,0,4500000,0,0,0,0,0,0,0,0,0],"HORTIFRUT COLOMBIA SAS":[0,18714000,29954324,32000000,18000000,20000000,22000000,23000000,18000000,19000000,30000000,32000000],"IDENFORMAS SAS":[4910000,14620000,3861000,14000000,20000000,4510000,3861000,3861000,16282000,2900000,13000000,13052000],"INTERAMERICANA DE PRODUCTOS QUIMICOS DEL ECUADOR S.A. INTERQUIMEC":[25310896,0,0,25310896,0,0,0,25310896,0,0,0,23310896],"INTERAMERICANA DE PRODUCTOS QUIMICOS S.A.S. INTERQUIM S.A.S.":[0,1008000,0,0,1508000,0,1008000,0,0,0,1008000,0],"KRUGERCORPORATION S.A.S":[17727526,0,0,0,0,0,0,0,0,0,0,0],"LABORATORIO SERVINSUMOS S.A.":[1427299,1811706,1800000,0,0,0,0,0,0,0,0,0],"LIPESA COLOMBIA S.A.S":[20920000,16780000,0,0,0,20920000,16780000,0,0,20920000,16780000,0],"MAPEI COLOMBIA S. A. S.":[4536000,5880000,0,7000000,5000000,0,7000000,5000000,0,7000000,5000000,0],"MARSAM BRANDS SAS":[0,0,2700000,0,0,0,0,0,0,0,0,0],"MEGACOMERCIAL ZF S.A.S.":[0,1180000,476000,0,0,0,0,0,0,0,0,0],"MOONS COLOMBIA S.A.S.":[0,3894000,2424000,0,0,2500000,0,1500000,0,0,3000000,0],"O-TEK CENTRAL S.A.S.":[0,726240,0,0,0,0,0,0,0,0,0,0],"OXIGENADOS Y DERIVADOS SAS":[7175000,0,4328000,0,5000000,0,7000000,0,5000000,0,7000000,0],"PREFLEX S A S":[9000000,9000000,250000,0,9000000,0,9000000,9000000,9000000,9000000,9000000,9000000],"QUIMICA COMERCIAL ANDINA S A S":[0,0,0,2500000,0,0,1800000,0,0,0,2500000,0],"SCHNEIDER ELECTRIC DE COLOMBIA SAS":[0,15769000,0,0,0,10769000,0,0,0,0,10000000,0],"SERVICIOS AEROPORTUARIOS INTEGRADOS SAI S.A.S.":[2760392,0,0,0,0,0,0,0,0,0,0,0],"SIPOTE BURRITO SA":[2686000,0,2400000,0,2000000,0,2400000,0,2000000,0,2400000,0],"SISTEMAS Y COMPUTADORES SA":[7863390,221468954,124358400,0,0,125000000,325000000,150000000,100000000,125000000,250000000,250000000],"SOCIEDAD DE APOYO AERONAUTICO SA":[3100000,4650000,11561500,3500000,3100000,4650000,3500000,3000000,4650000,5000000,3000000,3000000],"SOLUCIONES INTEGRALES DE MOVILIDAD, ACCESO Y TRAFICO SAS":[3000000,600000,8450000,5000000,1000000,4000000,1000000,5000000,1000000,4000000,11000000,5000000],"SUCROAL S.A.":[9900000,7425000,7425000,6000000,7000000,9000000,6000000,7000000,9000000,6000000,7000000,9000000],"SUMIMAS S A S":[65268000,0,0,0,0,0,0,0,0,0,0,0],"SUMINISTROS GLAS S.A.S.":[4800000,0,0,5200000,0,1500000,0,0,4800000,0,0,5200000],"TAKAMI S A":[2686000,0,2400000,0,2400000,0,2000000,0,2400000,0,2000000,0],"T-VAPAN 500 S.A.S.":[29484000,46259000,24396000,42000000,35000000,2400000,29500000,37000000,42000000,35000000,50000000,40000000],"PLAYLAND":[0,0,0,16500000,0,16500000,0,16500000,0,16500000,0,16500000],"NUEVOS NEGOCIOS":[0,0,0,0,70000000,20000000,15000000,0,120000000,0,0,0],"VERTICAL COFFEE CO S.A.S":[5424000,2240000,0,0,0,0,0,0,0,0,0,0]},"total":6256443206};
+  const VENTAS_INICIAL = {"anio":2026,"meses":[426514898,527735656,458514317,361168541,650717834,547915982,188136070,0,0,0,0,0],"clientes":{"SUMINISTROS GLAS S.A.S.":[4800000,0,0,0,4700000,0,0,0,0,0,0,0],"T-VAPAN 500 S.A.S.":[29484000,46259000,40890000,51674000,49474000,42194000,34772000,0,0,0,0,0],"INTERAMERICANA DE PRODUCTOS QUIMICOS DEL ECUADOR S.A. INTERQUIMEC":[25310896,-9054861,0,0,13092440,0,0,0,0,0,0,0],"SOCIEDAD DE APOYO AERONAUTICO SA":[3100000,4650000,11561500,7440000,3937000,4650000,4650000,0,0,0,0,0],"DISTRIBUIDORA DE VINOS Y LICORES SAS":[20776000,9886670,8573435,25314339,10740685,38999765,6400000,0,0,0,0,0],"LIPESA COLOMBIA S.A.S":[20920000,16780000,0,560000,0,0,0,0,0,0,0,0],"SUMIMAS S A S":[65268000,0,0,0,0,0,0,0,0,0,0,0],"COMPANIA GLOBAL DE PINTURAS SA":[119532050,14031642,31166588,21950960,29094488,40275632,1824000,0,0,0,0,0],"ANHIDRIDOS Y DERIVADOS DE COLOMBIA SAS":[26383625,36464000,58931425,78078625,38471375,17013375,27050000,0,0,0,0,0],"CARVAJAL SOLUCIONES DE COMUNICACION S.A.S.":[27429720,37678720,36255437,66780994,53433099,45698698,0,0,0,0,0,0],"SIPOTE BURRITO SA":[2686000,0,0,0,0,4800000,0,0,0,0,0,0],"TAKAMI S A":[2686000,0,0,0,12000000,0,0,0,0,0,0,0],"SERVICIOS AEROPORTUARIOS INTEGRADOS SAI S.A.S.":[2760392,0,0,1008000,324000,0,0,0,0,0,0,0],"SOLUCIONES INTEGRALES DE MOVILIDAD, ACCESO Y TRAFICO SAS":[3000000,600000,8450000,0,0,7050000,0,0,0,0,0,0],"SISTEMAS Y COMPUTADORES SA":[7863390,221468954,124358400,0,235011190,115560000,92448000,0,0,0,0,0],"CONCESIONARIA VUELA COMPANIA DE AVIACION S.A.P.I DE C.V SUCURSAL COLOMBIA":[-255000,0,0,0,0,0,0,0,0,0,0,0],"KRUGERCORPORATION S.A.S":[17727526,0,0,0,0,0,0,0,0,0,0,0],"VERTICAL COFFEE CO S.A.S":[5424000,2240000,1470000,7265000,0,2240000,0,0,0,0,0,0],"SUCROAL S.A.":[9900000,7425000,7425000,9900000,9900000,17325000,0,0,0,0,0,0],"OXIGENADOS Y DERIVADOS SAS":[7175000,0,4328000,0,7039000,24318000,0,0,0,0,0,0],"PREFLEX S A S":[9000000,9000000,9250000,0,18000000,0,8800000,0,0,0,0,0],"IDENFORMAS SAS":[4910000,14620000,4051000,5846400,10972400,11901800,835200,0,0,0,0,0],"LABORATORIO SERVINSUMOS S.A.":[1427299,1811706,1585385,2098394,1450686,1505320,0,0,0,0,0,0],"CARVAJAL TECNOLOGIA Y SERVICIOS S.A.S. BIC":[765000,1326000,0,765000,0,765000,0,0,0,0,0,0],"GIVAUDAN COLOMBIA SAS":[2336000,0,4734000,0,0,0,0,0,0,0,0,0],"FINEAROM SAS":[1569000,1380000,0,2470000,250000,900000,0,0,0,0,0,0],"MAPEI COLOMBIA S. A. S.":[4536000,5880000,0,250000,0,14465000,7225000,0,0,0,0,0],"HORTIFRUT COLOMBIA SAS":[0,18714000,39584454,17610000,3819000,22260000,0,0,0,0,0,0],"ESENCIA & CO SAS":[0,9600000,0,0,9000000,0,0,0,0,0,0,0],"MEGACOMERCIAL ZF S.A.S.":[0,1180000,412000,0,0,250000,805000,0,0,0,0,0],"SCHNEIDER ELECTRIC DE COLOMBIA SAS":[0,15769000,0,0,0,0,0,0,0,0,0,0],"ECOLAB COLOMBIA S.A.":[0,52383000,51723000,34060000,88311222,63986697,0,0,0,0,0,0],"O-TEK CENTRAL S.A.S.":[0,726240,0,400000,0,1375000,0,0,0,0,0,0],"MOONS COLOMBIA S.A.S.":[0,3894000,2424000,0,2735000,2495000,0,0,0,0,0,0],"INTERAMERICANA DE PRODUCTOS QUIMICOS S.A.S. INTERQUIM S.A.S.":[0,1008000,0,580000,1190000,0,0,0,0,0,0,0],"CAMPOFERT S.A.S":[0,2014584,413416,0,0,0,0,0,0,0,0,0],"ESPECIALIDADES DIAGNOSTICAS IHR S.A.S.":[0,0,504000,2840000,0,0,0,0,0,0,0,0],"AKZO NOBEL PERU S.A.C.":[0,0,9386028,0,0,10929484,0,0,0,0,0,0],"ANHIDRIDOS Y DERIVADOS DE COLOMBIA SAS 1":[0,0,1037250,1037250,1037250,1037250,0,0,0,0,0,0],"MARSAM BRANDS SAS":[0,0,0,2700000,100000,0,0,0,0,0,0,0],"MANE ANDINA S.A.S.":[0,0,0,16990000,16990000,16990000,0,0,0,0,0,0],"HRA INGREDIENTS SAS":[0,0,0,3549580,0,0,1486870,0,0,0,0,0],"PROMOTORA DE DIVERSION S.A.S DIVER S.A.S":[0,0,0,0,16500000,-501600,0,0,0,0,0,0],"QUIMICA COMERCIAL ANDINA S A S":[0,0,0,0,9240000,0,0,0,0,0,0,0],"HOKO COLOMBIA S.A.S":[0,0,0,0,3905000,11753500,0,0,0,0,0,0],"A LA PEPA SAS":[0,0,0,0,0,920000,0,0,0,0,0,0],"MUNDOTINTAS S.A.S":[0,0,0,0,0,990000,0,0,0,0,0,0],"HARMONY ROOTS SAS":[0,0,0,0,0,18123500,1840000,0,0,0,0,0],"PINTUCO COSTA RICA PCR":[0,0,0,0,0,7645561,0,0,0,0,0,0]},"total":3160703298,"ultimaFecha":"2026-07-07"};
 </script>
 <!-- ███████████████████████████  FIN CONFIGURACIÓN  ███████████████████ -->
 
@@ -419,6 +449,7 @@
     <button class="tab" id="tabEntregadas" role="tab" onclick="cambiarTab('entregadas')">Entregadas · Indicador <span class="pill" id="countEntregadas">0</span></button>
     <button class="tab" id="tabMateriales" role="tab" onclick="cambiarTab('materiales')">Materias Primas <span class="pill" id="countMateriales">0</span></button>
     <button class="tab" id="tabAmortiguadores" role="tab" onclick="cambiarTab('amortiguadores')">MP/PT <span class="pill" id="countAmortiguadores">0</span></button>
+    <button class="tab" id="tabVentas" role="tab" onclick="cambiarTab('ventas')">Ventas vs Presupuesto <span class="pill" id="countVentas">—</span></button>
   </div>
 
   <!-- ============ TABLERO PRINCIPAL ============ -->
@@ -624,6 +655,87 @@
       </div>
     </div>
   </section>
+
+  <!-- ============ VENTAS VS PRESUPUESTO ============ -->
+  <section id="vistaVentas" hidden>
+    <div class="upload-grid compacto">
+      <div class="upload-card compacto" id="dropzonePresupuesto" tabindex="0" role="button" aria-label="Cargar presupuesto mensual">
+        <span class="icono">🎯</span>
+        <strong>Presupuesto mes a mes</strong>
+        <small>Excel con una fila por cliente y columnas enero…diciembre (hoja "PROYECCIÓN"). Reemplaza el presupuesto vigente. Se carga una vez al año o cuando cambie.</small>
+        <div class="last" id="ultimaCargaPresupuesto"></div>
+        <input type="file" id="fileInputPresupuesto" accept=".xlsx,.xls" hidden>
+      </div>
+      <div class="upload-card compacto" id="dropzoneVentas" tabindex="0" role="button" aria-label="Cargar reporte de ventas Truput">
+        <span class="icono">💰</span>
+        <strong>Reporte de ventas (Truput)</strong>
+        <small>Reporte con "Fecha factura", "Nombre del cliente" y "Venta total". Se toman las facturas del año del presupuesto. Súbelo cada mes para actualizar el cumplimiento.</small>
+        <div class="last" id="ultimaCargaVentas"></div>
+        <input type="file" id="fileInputVentas" accept=".xlsx,.xls" hidden>
+      </div>
+    </div>
+
+    <div class="seccion-titulo" style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+      Cumplimiento comercial <strong id="ventasAnio" style="font-family:var(--disp);color:var(--azul)">—</strong>
+      <span id="ventasCorte" style="color:var(--ink-soft);font-weight:400;font-size:12px"></span>
+    </div>
+
+    <div class="kpis" id="kpisVentas">
+      <div class="kpi blue"><div class="v" id="kVentasYTD" title="">—</div><div class="l">Ventas a la fecha</div></div>
+      <div class="kpi"><div class="v" id="kPresYTD" title="">—</div><div class="l">Presupuesto a la fecha</div></div>
+      <div class="kpi ok"><div class="v" id="kCumplYTD">—</div><div class="l">Cumplimiento a la fecha</div></div>
+      <div class="kpi"><div class="v" id="kPresAnio" title="">—</div><div class="l">Presupuesto del año</div></div>
+      <div class="kpi"><div class="v" id="kProyeccion" title="">—</div><div class="l">Proyección de cierre</div></div>
+    </div>
+
+    <div class="tablewrap" style="padding:18px 18px 8px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+        <div class="grafica-titulo">Ventas reales vs presupuesto, por mes</div>
+        <div class="leyenda">
+          <span class="leyenda-item"><i style="background:var(--line-strong)"></i>Presupuesto</span>
+          <span class="leyenda-item"><i style="background:var(--azul)"></i>Ventas</span>
+          <span class="leyenda-item"><i style="background:var(--cyan)"></i>Mes en curso</span>
+        </div>
+      </div>
+      <div id="graficaMeses" class="grafica"></div>
+    </div>
+
+    <div class="tablewrap" style="padding:18px 18px 8px;margin-top:14px">
+      <div class="grafica-titulo">Acumulado del año — presupuesto vs ventas</div>
+      <div id="graficaAcumulada" class="grafica"></div>
+    </div>
+
+    <div class="seccion-titulo" style="margin-top:22px">Detalle por cliente</div>
+    <div class="filters">
+      <input type="search" id="fBuscarVentas" placeholder="Buscar cliente…" oninput="renderVentas()">
+      <select id="fOrdenVentas" onchange="renderVentas()">
+        <option value="ventas">Ordenar: Más ventas primero</option>
+        <option value="cumplimiento">Ordenar: Mayor cumplimiento</option>
+        <option value="brecha">Ordenar: Mayor brecha (falta)</option>
+        <option value="presupuesto">Ordenar: Mayor presupuesto</option>
+        <option value="cliente">Ordenar: Cliente (A-Z)</option>
+      </select>
+      <button class="btn" onclick="exportarVentas()">⬇ Exportar a Excel</button>
+      <span class="count" id="countFiltroVentas"></span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Cliente</th>
+          <th class="num">Presup. a la fecha</th>
+          <th class="num">Ventas a la fecha</th>
+          <th class="num">Cumpl. a la fecha</th>
+          <th class="num">Presup. año</th>
+          <th style="min-width:200px">Avance vs presupuesto año</th>
+        </tr></thead>
+        <tbody id="bodyVentas"></tbody>
+      </table>
+      <div class="empty" id="emptyVentas" hidden>
+        <strong>Aún no hay datos de ventas</strong>
+        Carga el reporte de ventas (Truput) y el presupuesto para ver el cumplimiento.
+      </div>
+    </div>
+  </section>
 </main>
 
 <div id="toast" role="status"></div>
@@ -631,7 +743,8 @@
 <script>
 const ESTADOS = ['En proceso sin novedad','Con Novedad','Entregada'];
 const LS_FALLBACK = 'coditeq_tablero_op_magda_v1';
-let DB = { ordenes:{}, ultimaCarga:null, amortiguadores:{}, ultimaCargaBuffer:null, ultimaCargaSitio:null, ultimaCargaTransito:null };
+let DB = { ordenes:{}, ultimaCarga:null, amortiguadores:{}, ultimaCargaBuffer:null, ultimaCargaSitio:null, ultimaCargaTransito:null,
+           presupuesto:null, ventas:null, ultimaCargaPresupuesto:null, ultimaCargaVentas:null };
 let ALCANCE = { comercial: COMERCIAL_INICIAL, clientes: ALCANCE_INICIAL.slice() };
 let ALCANCE_SET = new Set();
 let tabActual = 'principal';
@@ -747,10 +860,15 @@ function iniciar(){
       DB.ultimaCargaBuffer=data.ultimaCargaBuffer||null;
       DB.ultimaCargaSitio=data.ultimaCargaSitio||null;
       DB.ultimaCargaTransito=data.ultimaCargaTransito||null;
+      DB.presupuesto=data.presupuesto||null;
+      DB.ventas=data.ventas||null;
+      DB.ultimaCargaPresupuesto=data.ultimaCargaPresupuesto||null;
+      DB.ultimaCargaVentas=data.ultimaCargaVentas||null;
       if(data.alcance){ ALCANCE=data.alcance; actualizarAlcanceSet(); }
       render(); // muestra datos del caché inmediatamente
     }
   }catch(e){}
+  sembrarVentasSiVacio();
 
   if(firebaseConfigurado()){
     try{
@@ -818,6 +936,31 @@ function iniciar(){
       }, err=>{
         toast('Error de sincronización (amortiguadores): '+err.message);
       });
+
+      let ventasListo=false;
+      db.collection(COLECCION_VENTAS).onSnapshot(snap=>{
+        let pres=null, vent=null, meta=null;
+        snap.forEach(doc=>{
+          if(doc.id==='__presupuesto__') pres=doc.data();
+          else if(doc.id==='__ventas__') vent=doc.data();
+          else if(doc.id==='__meta__') meta=doc.data();
+        });
+        if(snap.empty && !ventasListo){
+          ventasListo=true;
+          sembrarVentasSiVacio();
+          guardarVentasNube(); // sube la semilla inicial la primera vez
+          renderSeguro();
+          return;
+        }
+        ventasListo=true;
+        if(pres) DB.presupuesto=pres.datos||null;
+        if(vent) DB.ventas=vent.datos||null;
+        if(meta){ DB.ultimaCargaPresupuesto=meta.ultimaCargaPresupuesto||null; DB.ultimaCargaVentas=meta.ultimaCargaVentas||null; }
+        guardarLocalFallback();
+        renderSeguro();
+      }, err=>{
+        toast('Error de sincronización (ventas): '+err.message);
+      });
     }catch(e){
       setConexion('off','Error de configuración Firebase');
       modoLocal();
@@ -850,6 +993,10 @@ function modoLocal(){
       DB.ultimaCargaBuffer=data.ultimaCargaBuffer||null;
       DB.ultimaCargaSitio=data.ultimaCargaSitio||null;
       DB.ultimaCargaTransito=data.ultimaCargaTransito||null;
+      DB.presupuesto=data.presupuesto||null;
+      DB.ventas=data.ventas||null;
+      DB.ultimaCargaPresupuesto=data.ultimaCargaPresupuesto||null;
+      DB.ultimaCargaVentas=data.ultimaCargaVentas||null;
     }else{
       DB.amortiguadores={};
       BUFFER_INICIAL.forEach(b=>{
@@ -859,6 +1006,7 @@ function modoLocal(){
       });
     }
   }catch(e){}
+  sembrarVentasSiVacio();
   render();
 }
 function guardarLocalFallback(){
@@ -866,6 +1014,8 @@ function guardarLocalFallback(){
     ordenes:DB.ordenes, ultimaCarga:DB.ultimaCarga,
     amortiguadores:DB.amortiguadores, ultimaCargaBuffer:DB.ultimaCargaBuffer,
     ultimaCargaSitio:DB.ultimaCargaSitio, ultimaCargaTransito:DB.ultimaCargaTransito,
+    presupuesto:DB.presupuesto, ventas:DB.ventas,
+    ultimaCargaPresupuesto:DB.ultimaCargaPresupuesto, ultimaCargaVentas:DB.ultimaCargaVentas,
     alcance:ALCANCE
   })); }catch(e){}
 }
@@ -935,6 +1085,8 @@ function activarTarjeta(dz,input,handler){
 activarTarjeta(document.getElementById('dropzoneBuffer'),document.getElementById('fileInputBuffer'),procesarArchivoBuffer);
 activarTarjeta(document.getElementById('dropzoneSitio'),document.getElementById('fileInputSitio'),procesarArchivoSitio);
 activarTarjeta(document.getElementById('dropzoneTransito'),document.getElementById('fileInputTransito'),procesarArchivoTransito);
+activarTarjeta(document.getElementById('dropzonePresupuesto'),document.getElementById('fileInputPresupuesto'),procesarArchivoPresupuesto);
+activarTarjeta(document.getElementById('dropzoneVentas'),document.getElementById('fileInputVentas'),procesarArchivoVentas);
 
 function normKey(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''); }
 
@@ -1305,16 +1457,280 @@ function devolverATablero(op){
 }
 
 /* ---------- Render ---------- */
+/* ======================= VENTAS VS PRESUPUESTO ======================= */
+const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MESES_LARGOS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function sembrarVentasSiVacio(){
+  if(!DB.presupuesto && typeof PRESUPUESTO_INICIAL!=='undefined') DB.presupuesto=JSON.parse(JSON.stringify(PRESUPUESTO_INICIAL));
+  if(!DB.ventas && typeof VENTAS_INICIAL!=='undefined') DB.ventas=JSON.parse(JSON.stringify(VENTAS_INICIAL));
+}
+function guardarVentasNube(){
+  if(!modoNube) return;
+  const batch=db.batch();
+  batch.set(db.collection(COLECCION_VENTAS).doc('__presupuesto__'),{datos:DB.presupuesto||null});
+  batch.set(db.collection(COLECCION_VENTAS).doc('__ventas__'),{datos:DB.ventas||null});
+  batch.set(db.collection(COLECCION_VENTAS).doc('__meta__'),{
+    ultimaCargaPresupuesto:DB.ultimaCargaPresupuesto||null, ultimaCargaVentas:DB.ultimaCargaVentas||null
+  });
+  batch.commit().catch(e=>toast('No se pudo guardar ventas en la nube: '+e.message));
+}
+function guardarVentas(){ if(modoNube) guardarVentasNube(); else guardarLocalFallback(); }
+
+function fmtMM(n){ if(n==null||isNaN(n)) return '—'; return '$'+Math.round(n/1e6).toLocaleString('es-CO')+' M'; }
+function fmtCOP(n){ if(n==null||isNaN(n)) return '—'; return '$'+Math.round(n).toLocaleString('es-CO'); }
+function ceros(){ return [0,0,0,0,0,0,0,0,0,0,0,0]; }
+
+/* ---- Carga: Presupuesto mes a mes ---- */
+async function procesarArchivoPresupuesto(file){
+  const buf=await file.arrayBuffer();
+  try{
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+    const sh=wb.SheetNames.find(n=>normKey(n).includes('proyeccion'))||wb.SheetNames[0];
+    const anioMatch=String(sh).match(/(20\d{2})/);
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[sh],{defval:'',raw:true});
+    if(!rows.length){ toast('El presupuesto no tiene filas.'); return; }
+    const keys=Object.keys(rows[0]);
+    const kCliente=keys.find(k=>normKey(k).includes('cliente'))||keys[0];
+    const kMes=MESES_LARGOS.map(m=>keys.find(k=>normKey(k)===normKey(m))||keys.find(k=>normKey(k).includes(normKey(m))));
+    if(kMes.filter(Boolean).length<6){ toast('No se reconocieron las columnas de meses (enero…diciembre).'); return; }
+    const clientes={}; const meses=ceros();
+    rows.forEach(r=>{
+      const nombre=normCliente(r[kCliente]);
+      if(!nombre||nombre.includes('TOTAL GENERAL')) return;
+      const vals=kMes.map(k=>k?(Number(String(r[k]).replace(/[^\d.-]/g,''))||0):0);
+      if(!vals.some(v=>v)) return;
+      clientes[nombre]=vals.map(Math.round);
+      vals.forEach((v,i)=>meses[i]+=v);
+    });
+    if(!Object.keys(clientes).length){ toast('No se encontraron clientes con presupuesto.'); return; }
+    const anio=anioMatch?+anioMatch[1]:(DB.presupuesto?DB.presupuesto.anio:new Date().getFullYear());
+    DB.presupuesto={anio,meses:meses.map(Math.round),clientes,total:Math.round(meses.reduce((a,b)=>a+b,0))};
+    DB.ultimaCargaPresupuesto={fecha:new Date().toLocaleString('es-CO'),archivo:file.name,filas:Object.keys(clientes).length};
+    guardarVentas(); render();
+    toast(`Presupuesto ${anio} cargado: ${Object.keys(clientes).length} clientes · ${fmtMM(DB.presupuesto.total)}`);
+  }catch(e){ toast('No se pudo leer el presupuesto: '+e.message); }
+}
+
+/* ---- Carga: Reporte de ventas (Truput) ---- */
+async function procesarArchivoVentas(file){
+  const buf=await file.arrayBuffer();
+  try{
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:true});
+    if(!rows.length){ toast('El reporte no tiene filas.'); return; }
+    const keys=Object.keys(rows[0]);
+    const kFecha=keys.find(k=>{const n=normKey(k);return n.includes('fecha')&&n.includes('factura');})||keys.find(k=>normKey(k).includes('fecha'));
+    const kCliente=keys.find(k=>{const n=normKey(k);return n.includes('nombre')&&n.includes('cliente');})
+                 ||keys.find(k=>{const n=normKey(k);return n.includes('cliente')&&!n.includes('nit')&&!n.includes('ciudad');});
+    const kVenta=keys.find(k=>{const n=normKey(k);return n.includes('venta')&&n.includes('total');});
+    if(!kFecha||!kCliente||!kVenta){ toast('No se reconocieron “Fecha factura”, “Nombre del cliente” o “Venta total”.'); return; }
+    let anioObj=DB.presupuesto?DB.presupuesto.anio:null;
+    if(!anioObj){
+      let maxIso=null;
+      rows.forEach(r=>{const iso=parseFecha(r[kFecha]); if(iso&&(!maxIso||iso>maxIso)) maxIso=iso;});
+      anioObj=maxIso?+maxIso.slice(0,4):new Date().getFullYear();
+    }
+    const clientes={}; const meses=ceros(); let ultima=null, nFilas=0;
+    rows.forEach(r=>{
+      const iso=parseFecha(r[kFecha]); if(!iso||(+iso.slice(0,4))!==anioObj) return;
+      const mes=(+iso.slice(5,7))-1;
+      const v=Number(String(r[kVenta]).replace(/[^\d.-]/g,''))||0;
+      const nombre=normCliente(r[kCliente]); if(!nombre) return;
+      (clientes[nombre]||(clientes[nombre]=ceros()))[mes]+=v;
+      meses[mes]+=v; nFilas++;
+      if(!ultima||iso>ultima) ultima=iso;
+    });
+    if(!nFilas){ toast(`El reporte no tiene facturas del año ${anioObj}.`); return; }
+    Object.keys(clientes).forEach(c=>clientes[c]=clientes[c].map(Math.round));
+    DB.ventas={anio:anioObj,meses:meses.map(Math.round),clientes,total:Math.round(meses.reduce((a,b)=>a+b,0)),ultimaFecha:ultima};
+    DB.ultimaCargaVentas={fecha:new Date().toLocaleString('es-CO'),archivo:file.name,filas:nFilas};
+    guardarVentas(); render();
+    toast(`Ventas ${anioObj} actualizadas: ${nFilas} facturas · ${fmtMM(DB.ventas.total)} (al ${fmtFecha(ultima)})`);
+  }catch(e){ toast('No se pudo leer el reporte de ventas: '+e.message); }
+}
+
+function mesCorteVentas(){
+  const v=DB.ventas;
+  if(v&&v.ultimaFecha) return +v.ultimaFecha.slice(5,7);
+  if(v){ for(let i=11;i>=0;i--) if(v.meses[i]) return i+1; }
+  return new Date().getMonth()+1;
+}
+
+/* ---- Render de la pestaña ---- */
+function renderVentas(){
+  const pres=DB.presupuesto, vent=DB.ventas;
+  const anio=(pres&&pres.anio)||(vent&&vent.anio)||new Date().getFullYear();
+  const presMes=(pres&&pres.meses)||ceros();
+  const ventMes=(vent&&vent.meses)||ceros();
+  const corte=mesCorteVentas();              // mes de la última factura (en curso, parcial)
+  const cerr=Math.max(0,corte-1);            // meses cerrados
+  const usarCorte=cerr===0;                  // si no hay meses cerrados aún, se incluye el parcial
+  const nMes=usarCorte?corte:cerr;           // meses usados para el "a la fecha"
+
+  document.getElementById('ventasAnio').textContent=anio;
+  const ultTxt=vent&&vent.ultimaFecha?`datos al ${fmtFecha(vent.ultimaFecha)}`:'sin reporte de ventas cargado';
+  const notaCurso=usarCorte?' (mes en curso, parcial)':` · ${MESES_CORTOS[corte-1]} en curso`;
+  document.getElementById('ventasCorte').textContent=`· ${ultTxt} · cumplimiento ${MESES_CORTOS[0]}–${MESES_CORTOS[nMes-1]}${notaCurso}`;
+  document.getElementById('ultimaCargaPresupuesto').textContent=DB.ultimaCargaPresupuesto
+    ? `Última carga: ${DB.ultimaCargaPresupuesto.archivo} · ${DB.ultimaCargaPresupuesto.fecha}` : 'Presupuesto de ejemplo precargado.';
+  document.getElementById('ultimaCargaVentas').textContent=DB.ultimaCargaVentas
+    ? `Última carga: ${DB.ultimaCargaVentas.archivo} · ${DB.ultimaCargaVentas.fecha}` : 'Ventas de ejemplo precargadas.';
+
+  const presYTD=presMes.slice(0,nMes).reduce((a,b)=>a+b,0);
+  const ventYTD=ventMes.slice(0,nMes).reduce((a,b)=>a+b,0);
+  const presAnio=presMes.reduce((a,b)=>a+b,0);
+  const cumpl=presYTD?ventYTD/presYTD:0;
+  // proyección de cierre: ventas reales acumuladas (incl. mes en curso) + presupuesto de los meses aún no facturados
+  const ventReal=ventMes.slice(0,corte).reduce((a,b)=>a+b,0);
+  const proy=ventReal+presMes.slice(corte).reduce((a,b)=>a+b,0);
+
+  const set=(id,val,tip)=>{const el=document.getElementById(id); el.textContent=val; if(tip!=null) el.title=tip;};
+  set('kVentasYTD',fmtMM(ventYTD),fmtCOP(ventYTD));
+  set('kPresYTD',fmtMM(presYTD),fmtCOP(presYTD));
+  set('kPresAnio',fmtMM(presAnio),fmtCOP(presAnio));
+  set('kProyeccion',fmtMM(proy),fmtCOP(proy)+' (ventas a la fecha + presupuesto restante)');
+  const kc=document.getElementById('kCumplYTD');
+  kc.textContent=presYTD?(cumpl*100).toFixed(0)+'%':'—';
+  kc.parentElement.className='kpi '+(cumpl>=1?'ok':cumpl>=.85?'warn':'alert');
+  document.getElementById('countVentas').textContent=presYTD?(cumpl*100).toFixed(0)+'%':'—';
+
+  document.getElementById('graficaMeses').innerHTML=svgBarras(presMes,ventMes,corte);
+  document.getElementById('graficaAcumulada').innerHTML=svgAcumulada(presMes,ventMes,corte);
+
+  const q=(document.getElementById('fBuscarVentas').value||'').toLowerCase();
+  const ord=document.getElementById('fOrdenVentas').value;
+  const nombres=new Set([...(pres?Object.keys(pres.clientes):[]),...(vent?Object.keys(vent.clientes):[])]);
+  let filas=[...nombres].map(n=>{
+    const pm=(pres&&pres.clientes[n])||ceros();
+    const vm=(vent&&vent.clientes[n])||ceros();
+    const pAnio=pm.reduce((a,b)=>a+b,0);
+    const pYTD=pm.slice(0,nMes).reduce((a,b)=>a+b,0);
+    const vYTD=vm.slice(0,nMes).reduce((a,b)=>a+b,0);
+    return {nombre:n,pAnio,pYTD,vYTD,cumpl:pYTD?vYTD/pYTD:(vYTD?Infinity:0),brecha:pYTD-vYTD};
+  }).filter(f=>f.pAnio>0||f.vYTD>0);
+  if(q) filas=filas.filter(f=>f.nombre.toLowerCase().includes(q));
+  const cmp={
+    ventas:(a,b)=>b.vYTD-a.vYTD,
+    cumplimiento:(a,b)=>b.cumpl-a.cumpl,
+    brecha:(a,b)=>b.brecha-a.brecha,
+    presupuesto:(a,b)=>b.pAnio-a.pAnio,
+    cliente:(a,b)=>a.nombre.localeCompare(b.nombre)
+  }[ord]||((a,b)=>b.vYTD-a.vYTD);
+  filas.sort(cmp);
+
+  const tb=document.getElementById('bodyVentas');
+  tb.innerHTML=filas.map(f=>{
+    const c=f.pYTD?f.vYTD/f.pYTD:(f.vYTD?1.2:0);
+    const cls=c>=1?'ok':c>=.85?'warn':'bajo';
+    const pct=f.pYTD?Math.round(f.vYTD/f.pYTD*100):null;
+    const avPct=f.pAnio?Math.min(100,Math.round(f.vYTD/f.pAnio*100)):0;
+    const meta=nMes/12;
+    const avCls=f.pAnio&&(f.vYTD/f.pAnio)>=meta?'ok':(f.pAnio&&(f.vYTD/f.pAnio)>=meta*.85?'warn':'bajo');
+    return `<tr>
+      <td>${esc(f.nombre)}</td>
+      <td class="num" title="${fmtCOP(f.pYTD)}">${fmtMM(f.pYTD)}</td>
+      <td class="num" title="${fmtCOP(f.vYTD)}">${fmtMM(f.vYTD)}</td>
+      <td class="num">${pct!=null?`<span class="cumpl-pill ${cls}">${pct}%</span>`:'<span style="color:var(--ink-soft)">—</span>'}</td>
+      <td class="num" title="${fmtCOP(f.pAnio)}">${fmtMM(f.pAnio)}</td>
+      <td><div class="barra-avance" title="${avPct}% del presupuesto anual"><span class="${avCls}" style="width:${avPct}%"></span></div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('emptyVentas').hidden=filas.length>0;
+  document.getElementById('countFiltroVentas').textContent=`${filas.length} clientes`;
+}
+
+/* ---- Gráfica de barras: presupuesto vs ventas por mes ---- */
+function svgBarras(pres,vent,corte){
+  const W=720,H=250,mL=48,mR=12,mT=14,mB=26;
+  const iw=W-mL-mR, ih=H-mT-mB, base=mT+ih;
+  const max=Math.max(1,...pres,...vent)*1.12;
+  const y=v=>base-(v/max)*ih;
+  const gw=iw/12, bw=Math.min(16,gw*0.32);
+  let g='';
+  for(let i=0;i<=4;i++){ const val=max*i/4, yy=y(val);
+    g+=`<line class="g-grid" x1="${mL}" y1="${yy.toFixed(1)}" x2="${W-mR}" y2="${yy.toFixed(1)}"/>`;
+    g+=`<text class="g-lbl" x="${mL-6}" y="${(yy+3).toFixed(1)}" text-anchor="end">${Math.round(val/1e6)}M</text>`;
+  }
+  for(let m=0;m<12;m++){
+    const cx=mL+gw*m+gw/2, xp=cx-bw-1, xv=cx+1;
+    const hp=base-y(pres[m]), hv=base-y(vent[m]);
+    g+=`<rect class="g-bar g-bar-pres" x="${xp.toFixed(1)}" y="${y(pres[m]).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,hp).toFixed(1)}" rx="2"><title>${MESES_CORTOS[m]} · Presupuesto ${fmtCOP(pres[m])}</title></rect>`;
+    const curso=(m+1)===corte;
+    g+=`<rect class="g-bar g-bar-vent${curso?' curso':''}" x="${xv.toFixed(1)}" y="${y(vent[m]).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,hv).toFixed(1)}" rx="2"><title>${MESES_CORTOS[m]} · Ventas ${fmtCOP(vent[m])}${curso?' (mes en curso, parcial)':''}</title></rect>`;
+    g+=`<text class="g-mes" x="${cx.toFixed(1)}" y="${H-8}" text-anchor="middle">${MESES_CORTOS[m]}</text>`;
+  }
+  g+=`<line class="g-axis" x1="${mL}" y1="${base.toFixed(1)}" x2="${W-mR}" y2="${base.toFixed(1)}"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Ventas vs presupuesto por mes">${g}</svg>`;
+}
+
+/* ---- Gráfica acumulada ---- */
+function svgAcumulada(pres,vent,corte){
+  const W=720,H=210,mL=48,mR=12,mT=14,mB=26;
+  const iw=W-mL-mR, ih=H-mT-mB, base=mT+ih;
+  const cp=[],cv=[]; let ap=0,av=0;
+  for(let m=0;m<12;m++){ ap+=pres[m]; cp.push(ap); av+=vent[m]; cv.push(av); }
+  const max=Math.max(1,cp[11],cv[corte-1])*1.08;
+  const x=m=>mL+(iw/11)*m, y=v=>base-(v/max)*ih;
+  let g='';
+  for(let i=0;i<=4;i++){ const val=max*i/4, yy=y(val);
+    g+=`<line class="g-grid" x1="${mL}" y1="${yy.toFixed(1)}" x2="${W-mR}" y2="${yy.toFixed(1)}"/>`;
+    g+=`<text class="g-lbl" x="${mL-6}" y="${(yy+3).toFixed(1)}" text-anchor="end">${Math.round(val/1e6)}M</text>`;
+  }
+  const pPath=cp.map((v,m)=>`${m?'L':'M'}${x(m).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  const vv=cv.slice(0,corte);
+  const vPath=vv.map((v,m)=>`${m?'L':'M'}${x(m).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  if(vv.length){
+    const vArea=vPath+` L${x(corte-1).toFixed(1)} ${base.toFixed(1)} L${x(0).toFixed(1)} ${base.toFixed(1)} Z`;
+    g+=`<path class="g-area" d="${vArea}"/>`;
+  }
+  g+=`<path class="g-line-pres" d="${pPath}"/>`;
+  if(vv.length) g+=`<path class="g-line-vent" d="${vPath}"/>`;
+  vv.forEach((v,m)=>{ g+=`<circle class="g-dot" cx="${x(m).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3"><title>${MESES_CORTOS[m]} · Ventas acum. ${fmtCOP(v)}</title></circle>`; });
+  for(let m=0;m<12;m++) g+=`<text class="g-mes" x="${x(m).toFixed(1)}" y="${H-8}" text-anchor="middle">${MESES_CORTOS[m]}</text>`;
+  g+=`<line class="g-axis" x1="${mL}" y1="${base.toFixed(1)}" x2="${W-mR}" y2="${base.toFixed(1)}"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Acumulado ventas vs presupuesto">${g}</svg>`;
+}
+
+/* ---- Exportar a Excel ---- */
+function exportarVentas(){
+  const pres=DB.presupuesto, vent=DB.ventas;
+  if(!pres&&!vent){ toast('No hay datos para exportar.'); return; }
+  const anio=(pres&&pres.anio)||(vent&&vent.anio)||'';
+  const corte=mesCorteVentas();
+  const cerr=Math.max(0,corte-1), nMes=cerr===0?corte:cerr;
+  const rot=`a la fecha (${MESES_CORTOS[0]}-${MESES_CORTOS[nMes-1]})`;
+  const nombres=new Set([...(pres?Object.keys(pres.clientes):[]),...(vent?Object.keys(vent.clientes):[])]);
+  const aoa=[['Cliente',`Presupuesto ${rot}`,`Ventas ${rot}`,'Cumplimiento a la fecha %','Presupuesto año','Ventas año','Cumplimiento año %']];
+  [...nombres].forEach(n=>{
+    const pm=(pres&&pres.clientes[n])||ceros();
+    const vm=(vent&&vent.clientes[n])||ceros();
+    const pYTD=pm.slice(0,nMes).reduce((a,b)=>a+b,0), vYTD=vm.slice(0,nMes).reduce((a,b)=>a+b,0);
+    const pA=pm.reduce((a,b)=>a+b,0), vA=vm.reduce((a,b)=>a+b,0);
+    if(pA===0&&vA===0) return;
+    aoa.push([n,pYTD,vYTD,pYTD?+(vYTD/pYTD*100).toFixed(1):'',pA,vA,pA?+(vA/pA*100).toFixed(1):'']);
+  });
+  const pmT=(pres&&pres.meses)||ceros(), vmT=(vent&&vent.meses)||ceros();
+  aoa.push(['TOTAL',pmT.slice(0,nMes).reduce((a,b)=>a+b,0),vmT.slice(0,nMes).reduce((a,b)=>a+b,0),'',pmT.reduce((a,b)=>a+b,0),vmT.reduce((a,b)=>a+b,0),'']);
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Ventas vs Presup');
+  XLSX.writeFile(wb,`Ventas_vs_Presupuesto_${anio}.xlsx`);
+}
+
+
 function cambiarTab(t){
   tabActual=t;
   document.getElementById('vistaPrincipal').hidden=t!=='principal';
   document.getElementById('vistaEntregadas').hidden=t!=='entregadas';
   document.getElementById('vistaMateriales').hidden=t!=='materiales';
   document.getElementById('vistaAmortiguadores').hidden=t!=='amortiguadores';
+  document.getElementById('vistaVentas').hidden=t!=='ventas';
   document.getElementById('tabPrincipal').classList.toggle('active',t==='principal');
   document.getElementById('tabEntregadas').classList.toggle('active',t==='entregadas');
   document.getElementById('tabMateriales').classList.toggle('active',t==='materiales');
   document.getElementById('tabAmortiguadores').classList.toggle('active',t==='amortiguadores');
+  document.getElementById('tabVentas').classList.toggle('active',t==='ventas');
   render();
 }
 
@@ -1468,6 +1884,8 @@ function render(){
   renderBufferTabla(buffersMP,{
     fTipo:'fTipoBufferMP',fBuscar:'fBuscarBufferMP',fEstado:'fEstadoBufferMP',fOrden:'fOrdenBufferMP',countFiltro:'countFiltroBufferMP',
     body:'bodyBufferMP',empty:'emptyBufferMP'});
+
+  try{ renderVentas(); }catch(e){ console.error('renderVentas',e); }
 }
 
 /* ---------- Exportaciones ---------- */
