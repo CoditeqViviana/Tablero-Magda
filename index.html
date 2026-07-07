@@ -151,6 +151,25 @@
     background:#FBE7F1;border:1px solid #F3C6DF;border-radius:20px;padding:1px 7px;margin-left:6px;white-space:nowrap;vertical-align:middle}
   tr.fila-fuera td{background:#FEF6FA}
 
+  /* ---- Formulario Acuerdos Comerciales ---- */
+  .form-acuerdo{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;background:var(--card);
+    border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px}
+  .form-acuerdo label{display:flex;flex-direction:column;gap:5px;font-size:11.5px;font-weight:600;color:var(--ink-soft);
+    text-transform:uppercase;letter-spacing:.05em}
+  .form-acuerdo .ancho{grid-column:1/-1}
+  .form-acuerdo input,.form-acuerdo textarea,.form-acuerdo select{font-family:var(--body);font-size:13.5px;font-weight:400;
+    color:var(--ink);text-transform:none;letter-spacing:0;padding:9px 11px;border:1px solid var(--line-strong);border-radius:8px;background:#fff;width:100%}
+  .form-acuerdo textarea{resize:vertical;min-height:42px}
+  .form-acuerdo input:focus,.form-acuerdo textarea:focus{outline:2px solid var(--azul);outline-offset:1px;border-color:var(--azul)}
+  .form-acciones{grid-column:1/-1;display:flex;gap:10px;align-items:center}
+  .ac-edit{cursor:text;border-radius:4px;padding:2px 4px;margin:-2px -4px;min-width:40px}
+  .ac-edit:hover{background:var(--azul-claro)}
+  .ac-edit:focus{outline:2px solid var(--azul);outline-offset:1px;background:#fff}
+  .ac-borrar{background:none;border:none;cursor:pointer;color:var(--ink-soft);font-size:15px;line-height:1;padding:4px 6px;border-radius:6px}
+  .ac-borrar:hover{color:var(--danger);background:var(--danger-bg)}
+  .vig-chip{font-family:var(--mono);font-size:10.5px;padding:1px 7px;border-radius:20px;margin-left:6px;white-space:nowrap}
+  .vig-chip.ok{background:var(--ok-bg);color:var(--ok)} .vig-chip.warn{background:var(--warn-bg);color:var(--warn)} .vig-chip.venc{background:var(--danger-bg);color:var(--danger)}
+
   .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
   .filters input[type=search],.filters select{padding:8px 12px;border:1px solid var(--line-strong);border-radius:8px;
     font-family:var(--body);font-size:13px;background:var(--card)}
@@ -249,6 +268,7 @@
   const COLECCION_OP = "op_magda";
   const COLECCION_BUFFER = "amortiguadores_magda";
   const COLECCION_VENTAS = "ventas_magda";
+  const COLECCION_ACUERDOS = "acuerdos_magda";
 
   // 4) Comercial al que pertenece este tablero y sus clientes asignados.
   //    Esto define el "alcance": solo las OP de estos clientes se cargarán al tablero.
@@ -453,6 +473,7 @@
     <button class="tab" id="tabMateriales" role="tab" onclick="cambiarTab('materiales')">Materias Primas <span class="pill" id="countMateriales">0</span></button>
     <button class="tab" id="tabAmortiguadores" role="tab" onclick="cambiarTab('amortiguadores')">MP/PT <span class="pill" id="countAmortiguadores">0</span></button>
     <button class="tab" id="tabVentas" role="tab" onclick="cambiarTab('ventas')">Ventas vs Presupuesto <span class="pill" id="countVentas">—</span></button>
+    <button class="tab" id="tabAcuerdos" role="tab" onclick="cambiarTab('acuerdos')">Acuerdos Comerciales <span class="pill" id="countAcuerdos">0</span></button>
   </div>
 
   <!-- ============ TABLERO PRINCIPAL ============ -->
@@ -740,6 +761,57 @@
       </div>
     </div>
   </section>
+
+  <!-- ============ ACUERDOS COMERCIALES ============ -->
+  <section id="vistaAcuerdos" hidden>
+    <div class="seccion-titulo">Registrar acuerdo comercial</div>
+    <div class="form-acuerdo">
+      <label>Fecha<input type="date" id="acFecha"></label>
+      <label>Tipo de acuerdo<input list="listaTiposAcuerdo" id="acTipo" placeholder="Precio, descuento, volumen…"></label>
+      <label>Referencia de MP/PT<input list="listaReferenciasMP" id="acReferencia" placeholder="Referencia monitoreada o libre"></label>
+      <label>Vigencia<input id="acVigencia" placeholder="Ej: 31/12/2026, 6 meses, indefinida"></label>
+      <label>Responsable de monitorear<input list="listaResponsables" id="acResponsable" placeholder="Nombre del responsable"></label>
+      <label class="ancho">Descripción del acuerdo<textarea id="acDescripcion" rows="2" placeholder="Detalle del acuerdo…"></textarea></label>
+      <div class="form-acciones">
+        <button class="btn primary" onclick="guardarNuevoAcuerdo()">＋ Agregar acuerdo</button>
+        <button class="btn ghost" onclick="limpiarFormAcuerdo()">Limpiar</button>
+      </div>
+    </div>
+    <datalist id="listaTiposAcuerdo">
+      <option value="Precio"></option><option value="Descuento"></option><option value="Volumen"></option>
+      <option value="Inventario / Amortiguador"></option><option value="Exclusividad"></option>
+      <option value="Plazo de pago"></option><option value="Consignación"></option><option value="Otro"></option>
+    </datalist>
+    <datalist id="listaReferenciasMP"></datalist>
+    <datalist id="listaResponsables"></datalist>
+
+    <div class="seccion-titulo" style="margin-top:22px">Acuerdos registrados</div>
+    <div class="filters">
+      <input type="search" id="fBuscarAcuerdos" placeholder="Buscar por tipo, referencia, descripción o responsable…" oninput="renderAcuerdos()">
+      <select id="fOrdenAcuerdos" onchange="renderAcuerdos()">
+        <option value="fecha">Ordenar: Fecha (recientes primero)</option>
+        <option value="vigencia">Ordenar: Vigencia (vence antes)</option>
+        <option value="tipo">Ordenar: Tipo de acuerdo</option>
+        <option value="responsable">Ordenar: Responsable</option>
+      </select>
+      <button class="btn" onclick="exportarAcuerdos()">⬇ Exportar a Excel</button>
+      <span class="count" id="countFiltroAcuerdos"></span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th style="min-width:96px">Fecha</th><th>Tipo</th><th>Referencia MP/PT</th>
+          <th style="min-width:260px">Descripción</th><th>Vigencia</th><th>Responsable</th><th style="width:40px"></th>
+        </tr></thead>
+        <tbody id="bodyAcuerdos"></tbody>
+      </table>
+      <div class="empty" id="emptyAcuerdos" hidden>
+        <strong>Aún no hay acuerdos registrados</strong>
+        Completa el formulario y presiona “Agregar acuerdo”.
+      </div>
+    </div>
+    <p style="color:var(--ink-soft);font-size:11.5px;margin-top:8px">Los campos de la tabla (excepto la fecha) se pueden editar directamente: haz clic sobre el texto y sal del campo para guardar.</p>
+  </section>
 </main>
 
 <div id="toast" role="status"></div>
@@ -748,7 +820,7 @@
 const ESTADOS = ['En proceso sin novedad','Con Novedad','Entregada'];
 const LS_FALLBACK = 'coditeq_tablero_op_magda_v1';
 let DB = { ordenes:{}, ultimaCarga:null, amortiguadores:{}, ultimaCargaBuffer:null, ultimaCargaSitio:null, ultimaCargaTransito:null,
-           presupuesto:null, ventas:null, ultimaCargaPresupuesto:null, ultimaCargaVentas:null };
+           presupuesto:null, ventas:null, ultimaCargaPresupuesto:null, ultimaCargaVentas:null, acuerdos:{} };
 let ALCANCE = { comercial: COMERCIAL_INICIAL, clientes: ALCANCE_INICIAL.slice() };
 let ALCANCE_SET = new Set();
 let tabActual = 'principal';
@@ -868,6 +940,7 @@ function iniciar(){
       DB.ventas=data.ventas||null;
       DB.ultimaCargaPresupuesto=data.ultimaCargaPresupuesto||null;
       DB.ultimaCargaVentas=data.ultimaCargaVentas||null;
+      DB.acuerdos=data.acuerdos||{};
       if(data.alcance){ ALCANCE=data.alcance; actualizarAlcanceSet(); }
       render(); // muestra datos del caché inmediatamente
     }
@@ -965,6 +1038,16 @@ function iniciar(){
       }, err=>{
         toast('Error de sincronización (ventas): '+err.message);
       });
+
+      db.collection(COLECCION_ACUERDOS).onSnapshot(snap=>{
+        const acuerdos={};
+        snap.forEach(doc=>{ acuerdos[doc.id]=doc.data(); });
+        DB.acuerdos=acuerdos;
+        guardarLocalFallback();
+        renderSeguro();
+      }, err=>{
+        toast('Error de sincronización (acuerdos): '+err.message);
+      });
     }catch(e){
       setConexion('off','Error de configuración Firebase');
       modoLocal();
@@ -1001,6 +1084,7 @@ function modoLocal(){
       DB.ventas=data.ventas||null;
       DB.ultimaCargaPresupuesto=data.ultimaCargaPresupuesto||null;
       DB.ultimaCargaVentas=data.ultimaCargaVentas||null;
+      DB.acuerdos=data.acuerdos||{};
     }else{
       DB.amortiguadores={};
       BUFFER_INICIAL.forEach(b=>{
@@ -1020,6 +1104,7 @@ function guardarLocalFallback(){
     ultimaCargaSitio:DB.ultimaCargaSitio, ultimaCargaTransito:DB.ultimaCargaTransito,
     presupuesto:DB.presupuesto, ventas:DB.ventas,
     ultimaCargaPresupuesto:DB.ultimaCargaPresupuesto, ultimaCargaVentas:DB.ultimaCargaVentas,
+    acuerdos:DB.acuerdos,
     alcance:ALCANCE
   })); }catch(e){}
 }
@@ -1061,7 +1146,7 @@ function guardarAlcance(){
    si hay un campo de la tabla con foco, el repintado espera hasta que salgas del campo. */
 function renderSeguro(){
   const ae=document.activeElement;
-  const editando=ae && (ae.classList.contains('novedad')||ae.classList.contains('estado')||ae.classList.contains('fecha-real'));
+  const editando=ae && (ae.classList.contains('novedad')||ae.classList.contains('estado')||ae.classList.contains('fecha-real')||ae.classList.contains('ac-edit'));
   if(editando){ renderPendiente=true; ae.addEventListener('blur',()=>{ if(renderPendiente){renderPendiente=false; render();} },{once:true}); }
   else render();
 }
@@ -1754,6 +1839,112 @@ function exportarVentas(){
 }
 
 
+/* ======================= ACUERDOS COMERCIALES ======================= */
+function guardarAcuerdoDoc(id){
+  if(modoNube){ db.collection(COLECCION_ACUERDOS).doc(id).set(DB.acuerdos[id],{merge:true})
+    .catch(e=>toast('No se pudo guardar el acuerdo: '+e.message)); }
+  else guardarLocalFallback();
+}
+function limpiarFormAcuerdo(){
+  ['acFecha','acTipo','acReferencia','acVigencia','acResponsable','acDescripcion'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+}
+function guardarNuevoAcuerdo(){
+  const g=id=>document.getElementById(id);
+  const fecha=g('acFecha').value||hoyISO();
+  const tipo=g('acTipo').value.trim();
+  const referencia=g('acReferencia').value.trim();
+  const vigencia=g('acVigencia').value.trim();
+  const responsable=g('acResponsable').value.trim();
+  const descripcion=g('acDescripcion').value.trim();
+  if(!tipo && !descripcion){ toast('Indica al menos el tipo o la descripción del acuerdo.'); return; }
+  const id='a_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  DB.acuerdos[id]={id,fecha,tipo,referencia,descripcion,vigencia,responsable,creado:new Date().toLocaleString('es-CO')};
+  guardarAcuerdoDoc(id);
+  limpiarFormAcuerdo();
+  renderAcuerdos();
+  toast('Acuerdo agregado.');
+}
+function actualizarAcuerdoCampo(el){
+  const id=el.dataset.id, campo=el.dataset.campo;
+  if(!id||!DB.acuerdos[id]) return;
+  const val=el.textContent.trim();
+  if(DB.acuerdos[id][campo]===val) return;
+  DB.acuerdos[id][campo]=val;
+  guardarAcuerdoDoc(id);
+  renderAcuerdos();
+}
+function eliminarAcuerdo(id){
+  if(!DB.acuerdos[id]) return;
+  if(!confirm('¿Eliminar este acuerdo? Esta acción no se puede deshacer.')) return;
+  delete DB.acuerdos[id];
+  if(modoNube){ db.collection(COLECCION_ACUERDOS).doc(id).delete().catch(e=>toast('No se pudo eliminar: '+e.message)); }
+  else guardarLocalFallback();
+  renderAcuerdos();
+  toast('Acuerdo eliminado.');
+}
+function vigenciaEstado(vig){
+  const iso=parseFecha(vig);
+  if(!iso) return {chip:''};
+  const d=diffDias(hoyISO(),iso);
+  if(d<0) return {chip:'<span class="vig-chip venc">vencido</span>'};
+  if(d<=15) return {chip:`<span class="vig-chip warn">vence en ${d} d</span>`};
+  return {chip:'<span class="vig-chip ok">vigente</span>'};
+}
+function renderAcuerdos(){
+  const refs=[...new Set(Object.values(DB.amortiguadores||{}).map(b=>b.referencia).filter(Boolean))].sort();
+  const dlRef=document.getElementById('listaReferenciasMP');
+  if(dlRef) dlRef.innerHTML=refs.map(r=>`<option value="${esc(r)}"></option>`).join('');
+  const resps=[...new Set([ALCANCE.comercial,...Object.values(DB.acuerdos||{}).map(a=>a.responsable)].filter(Boolean))].sort();
+  const dlResp=document.getElementById('listaResponsables');
+  if(dlResp) dlResp.innerHTML=resps.map(r=>`<option value="${esc(r)}"></option>`).join('');
+
+  const arr=Object.values(DB.acuerdos||{});
+  document.getElementById('countAcuerdos').textContent=arr.length;
+
+  const q=(document.getElementById('fBuscarAcuerdos').value||'').toLowerCase();
+  const ord=document.getElementById('fOrdenAcuerdos').value;
+  let lista=arr.filter(a=>!q||`${a.tipo||''} ${a.referencia||''} ${a.descripcion||''} ${a.responsable||''} ${a.vigencia||''}`.toLowerCase().includes(q));
+  const claveVig=a=>parseFecha(a.vigencia)||'9999-99-99';
+  const cmp={
+    fecha:(a,b)=>(b.fecha||'').localeCompare(a.fecha||''),
+    vigencia:(a,b)=>claveVig(a).localeCompare(claveVig(b)),
+    tipo:(a,b)=>(a.tipo||'').localeCompare(b.tipo||''),
+    responsable:(a,b)=>(a.responsable||'').localeCompare(b.responsable||'')
+  }[ord]||((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  lista.sort(cmp);
+
+  const ed=(a,campo)=>`<span class="ac-edit" contenteditable="true" data-id="${a.id}" data-campo="${campo}" onblur="actualizarAcuerdoCampo(this)" onkeydown="if(event.key==='Enter'&&'${campo}'!=='descripcion'){event.preventDefault();this.blur();}">${esc(a[campo]||'')}</span>`;
+  document.getElementById('bodyAcuerdos').innerHTML=lista.map(a=>{
+    const est=vigenciaEstado(a.vigencia);
+    return `<tr>
+      <td>${fmtFecha(a.fecha)}</td>
+      <td>${ed(a,'tipo')}</td>
+      <td>${ed(a,'referencia')}</td>
+      <td>${ed(a,'descripcion')}</td>
+      <td>${ed(a,'vigencia')}${est.chip}</td>
+      <td>${ed(a,'responsable')}</td>
+      <td><button class="ac-borrar" title="Eliminar acuerdo" onclick="eliminarAcuerdo('${a.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('emptyAcuerdos').hidden=lista.length>0;
+  document.getElementById('countFiltroAcuerdos').textContent=`${lista.length} acuerdo${lista.length===1?'':'s'}`;
+}
+function exportarAcuerdos(){
+  const arr=Object.values(DB.acuerdos||{});
+  if(!arr.length){ toast('No hay acuerdos para exportar.'); return; }
+  const filas=arr.map(a=>({
+    'Fecha':fmtFecha(a.fecha),'Tipo de acuerdo':a.tipo||'','Referencia MP/PT':a.referencia||'',
+    'Descripción del acuerdo':a.descripcion||'','Vigencia':a.vigencia||'','Responsable de monitorear':a.responsable||''
+  }));
+  const ws=XLSX.utils.json_to_sheet(filas);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Acuerdos');
+  XLSX.writeFile(wb,`Acuerdos_Comerciales_${hoyISO()}.xlsx`);
+}
+
+
 function cambiarTab(t){
   tabActual=t;
   document.getElementById('vistaPrincipal').hidden=t!=='principal';
@@ -1761,11 +1952,13 @@ function cambiarTab(t){
   document.getElementById('vistaMateriales').hidden=t!=='materiales';
   document.getElementById('vistaAmortiguadores').hidden=t!=='amortiguadores';
   document.getElementById('vistaVentas').hidden=t!=='ventas';
+  document.getElementById('vistaAcuerdos').hidden=t!=='acuerdos';
   document.getElementById('tabPrincipal').classList.toggle('active',t==='principal');
   document.getElementById('tabEntregadas').classList.toggle('active',t==='entregadas');
   document.getElementById('tabMateriales').classList.toggle('active',t==='materiales');
   document.getElementById('tabAmortiguadores').classList.toggle('active',t==='amortiguadores');
   document.getElementById('tabVentas').classList.toggle('active',t==='ventas');
+  document.getElementById('tabAcuerdos').classList.toggle('active',t==='acuerdos');
   render();
 }
 
@@ -1921,6 +2114,7 @@ function render(){
     body:'bodyBufferMP',empty:'emptyBufferMP'});
 
   try{ renderVentas(); }catch(e){ console.error('renderVentas',e); }
+  try{ renderAcuerdos(); }catch(e){ console.error('renderAcuerdos',e); }
 }
 
 /* ---------- Exportaciones ---------- */
