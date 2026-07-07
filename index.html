@@ -147,6 +147,9 @@
   .barra-avance span.ok{background:var(--ok)} .barra-avance span.warn{background:var(--amarillo)} .barra-avance span.bajo{background:var(--danger)}
   .cumpl-pill{font-family:var(--mono);font-weight:600;font-size:12px;padding:2px 8px;border-radius:20px}
   .cumpl-pill.ok{background:var(--ok-bg);color:var(--ok)} .cumpl-pill.warn{background:var(--warn-bg);color:var(--warn)} .cumpl-pill.bajo{background:var(--danger-bg);color:var(--danger)}
+  .badge-fuera{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--magenta);
+    background:#FBE7F1;border:1px solid #F3C6DF;border-radius:20px;padding:1px 7px;margin-left:6px;white-space:nowrap;vertical-align:middle}
+  tr.fila-fuera td{background:#FEF6FA}
 
   .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
   .filters input[type=search],.filters select{padding:8px 12px;border:1px solid var(--line-strong);border-radius:8px;
@@ -712,6 +715,7 @@
         <option value="ventas">Ordenar: Más ventas primero</option>
         <option value="cumplimiento">Ordenar: Mayor cumplimiento</option>
         <option value="brecha">Ordenar: Mayor brecha (falta)</option>
+        <option value="fuera">Ordenar: Fuera de presupuesto primero</option>
         <option value="presupuesto">Ordenar: Mayor presupuesto</option>
         <option value="cliente">Ordenar: Cliente (A-Z)</option>
       </select>
@@ -1481,6 +1485,37 @@ function fmtMM(n){ if(n==null||isNaN(n)) return '—'; return '$'+Math.round(n/1
 function fmtCOP(n){ if(n==null||isNaN(n)) return '—'; return '$'+Math.round(n).toLocaleString('es-CO'); }
 function ceros(){ return [0,0,0,0,0,0,0,0,0,0,0,0]; }
 
+/* Clave canónica de razón social: unifica variantes del mismo cliente
+   (misma razón social con puntuación distinta o sufijos numéricos como " 1", " - 2").
+   NO fusiona nombres con palabras distintas (p.ej. "PINTUCO" ≠ "PINTUCO COSTA RICA"). */
+function canonCliente(s){
+  let n=normCliente(s);            // MAYÚSCULAS, sin tildes, espacios simples
+  n=n.replace(/[^A-Z0-9 ]/g,' ');  // quitar puntuación (S.A.S == SAS == S A S)
+  n=n.replace(/\s+/g,' ').trim();
+  n=n.replace(/( \d+)+$/,'').trim();// quitar sufijos numéricos finales (" 1", " - 2" -> " 2")
+  return n||normCliente(s);
+}
+/* Agrupa presupuesto y ventas por razón social unificada.
+   Devuelve [{nombre, pm[12], vm[12]}]. Nombre visible = el del presupuesto si existe;
+   si no, la variante más corta de ventas. */
+function agruparClientes(pres,vent){
+  const g={};
+  const add=(obj,esPres)=>{
+    if(!obj||!obj.clientes) return;
+    for(const n in obj.clientes){
+      const c=canonCliente(n);
+      const e=g[c]||(g[c]={presName:null,ventName:null,pm:ceros(),vm:ceros()});
+      const arr=obj.clientes[n]||ceros();
+      const tgt=esPres?e.pm:e.vm;
+      for(let i=0;i<12;i++) tgt[i]+=arr[i]||0;
+      if(esPres){ if(!e.presName) e.presName=n; }
+      else if(!e.ventName || n.length<e.ventName.length){ e.ventName=n; }
+    }
+  };
+  add(pres,true); add(vent,false);
+  return Object.values(g).map(e=>({nombre:e.presName||e.ventName,pm:e.pm,vm:e.vm}));
+}
+
 /* ---- Carga: Presupuesto mes a mes ---- */
 async function procesarArchivoPresupuesto(file){
   const buf=await file.arrayBuffer();
@@ -1600,21 +1635,21 @@ function renderVentas(){
 
   const q=(document.getElementById('fBuscarVentas').value||'').toLowerCase();
   const ord=document.getElementById('fOrdenVentas').value;
-  const nombres=new Set([...(pres?Object.keys(pres.clientes):[]),...(vent?Object.keys(vent.clientes):[])]);
-  let filas=[...nombres].map(n=>{
-    const pm=(pres&&pres.clientes[n])||ceros();
-    const vm=(vent&&vent.clientes[n])||ceros();
-    const pAnio=pm.reduce((a,b)=>a+b,0);
-    const pYTD=pm.slice(0,nMes).reduce((a,b)=>a+b,0);
-    const vYTD=vm.slice(0,nMes).reduce((a,b)=>a+b,0);
-    return {nombre:n,pAnio,pYTD,vYTD,cumpl:pYTD?vYTD/pYTD:(vYTD?Infinity:0),brecha:pYTD-vYTD};
-  }).filter(f=>f.pAnio>0||f.vYTD>0);
+  const grupos=agruparClientes(pres,vent);
+  let filas=grupos.map(gp=>{
+    const pAnio=gp.pm.reduce((a,b)=>a+b,0);
+    const vAnio=gp.vm.reduce((a,b)=>a+b,0);
+    const pYTD=gp.pm.slice(0,nMes).reduce((a,b)=>a+b,0);
+    const vYTD=gp.vm.slice(0,nMes).reduce((a,b)=>a+b,0);
+    return {nombre:gp.nombre,pAnio,vAnio,pYTD,vYTD,fuera:pAnio===0&&vAnio>0,cumpl:pYTD?vYTD/pYTD:(vYTD?Infinity:0),brecha:pYTD-vYTD};
+  }).filter(f=>f.pAnio>0||f.vAnio>0);
   if(q) filas=filas.filter(f=>f.nombre.toLowerCase().includes(q));
   const cmp={
     ventas:(a,b)=>b.vYTD-a.vYTD,
     cumplimiento:(a,b)=>b.cumpl-a.cumpl,
     brecha:(a,b)=>b.brecha-a.brecha,
     presupuesto:(a,b)=>b.pAnio-a.pAnio,
+    fuera:(a,b)=>(b.fuera-a.fuera)||(b.vAnio-a.vAnio),
     cliente:(a,b)=>a.nombre.localeCompare(b.nombre)
   }[ord]||((a,b)=>b.vYTD-a.vYTD);
   filas.sort(cmp);
@@ -1627,17 +1662,18 @@ function renderVentas(){
     const avPct=f.pAnio?Math.min(100,Math.round(f.vYTD/f.pAnio*100)):0;
     const meta=nMes/12;
     const avCls=f.pAnio&&(f.vYTD/f.pAnio)>=meta?'ok':(f.pAnio&&(f.vYTD/f.pAnio)>=meta*.85?'warn':'bajo');
-    return `<tr>
-      <td>${esc(f.nombre)}</td>
-      <td class="num" title="${fmtCOP(f.pYTD)}">${fmtMM(f.pYTD)}</td>
+    return `<tr${f.fuera?' class="fila-fuera"':''}>
+      <td>${esc(f.nombre)}${f.fuera?' <span class="badge-fuera" title="Este cliente tiene ventas pero no figura en el presupuesto">fuera de presupuesto</span>':''}</td>
+      <td class="num" title="${fmtCOP(f.pYTD)}">${f.fuera?'<span style="color:var(--ink-soft)">—</span>':fmtMM(f.pYTD)}</td>
       <td class="num" title="${fmtCOP(f.vYTD)}">${fmtMM(f.vYTD)}</td>
       <td class="num">${pct!=null?`<span class="cumpl-pill ${cls}">${pct}%</span>`:'<span style="color:var(--ink-soft)">—</span>'}</td>
-      <td class="num" title="${fmtCOP(f.pAnio)}">${fmtMM(f.pAnio)}</td>
-      <td><div class="barra-avance" title="${avPct}% del presupuesto anual"><span class="${avCls}" style="width:${avPct}%"></span></div></td>
+      <td class="num" title="${fmtCOP(f.pAnio)}">${f.fuera?'<span style="color:var(--ink-soft)">—</span>':fmtMM(f.pAnio)}</td>
+      <td>${f.fuera?'<span style="color:var(--magenta);font-size:11.5px">Sin presupuesto asignado</span>':`<div class="barra-avance" title="${avPct}% del presupuesto anual"><span class="${avCls}" style="width:${avPct}%"></span></div>`}</td>
     </tr>`;
   }).join('');
   document.getElementById('emptyVentas').hidden=filas.length>0;
-  document.getElementById('countFiltroVentas').textContent=`${filas.length} clientes`;
+  const nFuera=filas.filter(f=>f.fuera).length;
+  document.getElementById('countFiltroVentas').textContent=`${filas.length} clientes`+(nFuera?` · ${nFuera} fuera de presupuesto`:'');
 }
 
 /* ---- Gráfica de barras: presupuesto vs ventas por mes ---- */
@@ -1700,18 +1736,17 @@ function exportarVentas(){
   const corte=mesCorteVentas();
   const cerr=Math.max(0,corte-1), nMes=cerr===0?corte:cerr;
   const rot=`a la fecha (${MESES_CORTOS[0]}-${MESES_CORTOS[nMes-1]})`;
-  const nombres=new Set([...(pres?Object.keys(pres.clientes):[]),...(vent?Object.keys(vent.clientes):[])]);
-  const aoa=[['Cliente',`Presupuesto ${rot}`,`Ventas ${rot}`,'Cumplimiento a la fecha %','Presupuesto año','Ventas año','Cumplimiento año %']];
-  [...nombres].forEach(n=>{
-    const pm=(pres&&pres.clientes[n])||ceros();
-    const vm=(vent&&vent.clientes[n])||ceros();
+  const aoa=[['Cliente','En presupuesto',`Presupuesto ${rot}`,`Ventas ${rot}`,'Cumplimiento a la fecha %','Presupuesto año','Ventas año','Cumplimiento año %']];
+  agruparClientes(pres,vent).forEach(gp=>{
+    const pm=gp.pm, vm=gp.vm;
     const pYTD=pm.slice(0,nMes).reduce((a,b)=>a+b,0), vYTD=vm.slice(0,nMes).reduce((a,b)=>a+b,0);
     const pA=pm.reduce((a,b)=>a+b,0), vA=vm.reduce((a,b)=>a+b,0);
     if(pA===0&&vA===0) return;
-    aoa.push([n,pYTD,vYTD,pYTD?+(vYTD/pYTD*100).toFixed(1):'',pA,vA,pA?+(vA/pA*100).toFixed(1):'']);
+    const enPres=pA>0?'Sí':'No — fuera de presupuesto';
+    aoa.push([gp.nombre,enPres,pYTD,vYTD,pYTD?+(vYTD/pYTD*100).toFixed(1):'',pA,vA,pA?+(vA/pA*100).toFixed(1):'']);
   });
   const pmT=(pres&&pres.meses)||ceros(), vmT=(vent&&vent.meses)||ceros();
-  aoa.push(['TOTAL',pmT.slice(0,nMes).reduce((a,b)=>a+b,0),vmT.slice(0,nMes).reduce((a,b)=>a+b,0),'',pmT.reduce((a,b)=>a+b,0),vmT.reduce((a,b)=>a+b,0),'']);
+  aoa.push(['TOTAL','',pmT.slice(0,nMes).reduce((a,b)=>a+b,0),vmT.slice(0,nMes).reduce((a,b)=>a+b,0),'',pmT.reduce((a,b)=>a+b,0),vmT.reduce((a,b)=>a+b,0),'']);
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Ventas vs Presup');
