@@ -132,10 +132,12 @@
   .g-lbl{font-family:var(--mono);font-size:10px;fill:var(--ink-soft)}
   .g-mes{font-family:var(--disp);font-size:11px;font-weight:600;fill:var(--ink)}
   .g-bar-pres{fill:var(--line-strong)}
+  .g-bar-cod{fill:var(--magenta)}
   .g-bar-vent{fill:var(--azul)}
   .g-bar-vent.curso{fill:var(--cyan)}
   .g-bar:hover{opacity:.82}
   .g-line-pres{fill:none;stroke:var(--line-strong);stroke-width:2.5}
+  .g-line-cod{fill:none;stroke:var(--magenta);stroke-width:2.5}
   .g-line-vent{fill:none;stroke:var(--azul);stroke-width:2.5}
   .g-dot{fill:var(--azul)}
   .g-area{fill:var(--azul);opacity:.06}
@@ -405,6 +407,7 @@
   // ── Datos iniciales Ventas vs Presupuesto (se sobrescriben al cargar los Excel) ──
   const PRESUPUESTO_INICIAL = {"anio":2026,"meses":[426769898,536790516,420863352,336010896,369522584,516177000,704449000,505186480,587060000,537320000,675802584,640490896],"clientes":{"AKZO NOBEL PERU S.A.C.":[0,0,9386028,0,0,11000000,0,0,0,13000000,0,0],"ANHIDRIDOS Y DERIVADOS DE COLOMBIA SAS":[26383625,36464000,64854000,40000000,27000000,55000000,60000000,42000000,37000000,50000000,45000000,55000000],"CAMPOFERT S.A.S":[0,2014584,2428000,0,2014584,2428000,0,2014584,2428000,0,2014584,2428000],"CARVAJAL SOLUCIONES DE COMUNICACION S.A.S.":[27429720,37678720,35745000,40000000,45000000,39000000,65000000,42000000,40000000,39000000,65000000,42000000],"CARVAJAL TECNOLOGIA Y SERVICIOS S.A.S. BIC":[765000,1326000,3000000,0,0,0,0,0,0,0,0,0],"COMPANIA GLOBAL DE PINTURAS SA":[119532050,14031642,15164100,37000000,25000000,42000000,35000000,28000000,17000000,40000000,45000000,50000000],"DISTRIBUIDORA DE VINOS Y LICORES SAS":[20776000,9886670,5311000,11000000,40000000,70000000,25000000,50000000,100000000,90000000,30000000,30000000],"ECOLAB COLOMBIA S.A.":[0,52383000,51687000,49000000,50000000,55000000,55000000,55000000,55000000,55000000,55000000,55000000],"ESENCIA & CO SAS":[0,9600000,0,0,0,0,9600000,0,0,0,9600000,0],"ESPECIALIDADES DIAGNOSTICAS IHR S.A.S.":[0,0,504000,0,0,0,0,0,0,0,0,0],"FINEAROM SAS":[1569000,1380000,1500000,0,1500000,0,2000000,0,1500000,0,1500000,0],"GIVAUDAN COLOMBIA SAS":[2336000,0,4500000,0,0,0,0,0,0,0,0,0],"HORTIFRUT COLOMBIA SAS":[0,18714000,29954324,32000000,18000000,20000000,22000000,23000000,18000000,19000000,30000000,32000000],"IDENFORMAS SAS":[4910000,14620000,3861000,14000000,20000000,4510000,3861000,3861000,16282000,2900000,13000000,13052000],"INTERAMERICANA DE PRODUCTOS QUIMICOS DEL ECUADOR S.A. INTERQUIMEC":[25310896,0,0,25310896,0,0,0,25310896,0,0,0,23310896],"INTERAMERICANA DE PRODUCTOS QUIMICOS S.A.S. INTERQUIM S.A.S.":[0,1008000,0,0,1508000,0,1008000,0,0,0,1008000,0],"KRUGERCORPORATION S.A.S":[17727526,0,0,0,0,0,0,0,0,0,0,0],"LABORATORIO SERVINSUMOS S.A.":[1427299,1811706,1800000,0,0,0,0,0,0,0,0,0],"LIPESA COLOMBIA S.A.S":[20920000,16780000,0,0,0,20920000,16780000,0,0,20920000,16780000,0],"MAPEI COLOMBIA S. A. S.":[4536000,5880000,0,7000000,5000000,0,7000000,5000000,0,7000000,5000000,0],"MARSAM BRANDS SAS":[0,0,2700000,0,0,0,0,0,0,0,0,0],"MEGACOMERCIAL ZF S.A.S.":[0,1180000,476000,0,0,0,0,0,0,0,0,0],"MOONS COLOMBIA S.A.S.":[0,3894000,2424000,0,0,2500000,0,1500000,0,0,3000000,0],"O-TEK CENTRAL S.A.S.":[0,726240,0,0,0,0,0,0,0,0,0,0],"OXIGENADOS Y DERIVADOS SAS":[7175000,0,4328000,0,5000000,0,7000000,0,5000000,0,7000000,0],"PREFLEX S A S":[9000000,9000000,250000,0,9000000,0,9000000,9000000,9000000,9000000,9000000,9000000],"QUIMICA COMERCIAL ANDINA S A S":[0,0,0,2500000,0,0,1800000,0,0,0,2500000,0],"SCHNEIDER ELECTRIC DE COLOMBIA SAS":[0,15769000,0,0,0,10769000,0,0,0,0,10000000,0],"SERVICIOS AEROPORTUARIOS INTEGRADOS SAI S.A.S.":[2760392,0,0,0,0,0,0,0,0,0,0,0],"SIPOTE BURRITO SA":[2686000,0,2400000,0,2000000,0,2400000,0,2000000,0,2400000,0],"SISTEMAS Y COMPUTADORES SA":[7863390,221468954,124358400,0,0,125000000,325000000,150000000,100000000,125000000,250000000,250000000],"SOCIEDAD DE APOYO AERONAUTICO SA":[3100000,4650000,11561500,3500000,3100000,4650000,3500000,3000000,4650000,5000000,3000000,3000000],"SOLUCIONES INTEGRALES DE MOVILIDAD, ACCESO Y TRAFICO SAS":[3000000,600000,8450000,5000000,1000000,4000000,1000000,5000000,1000000,4000000,11000000,5000000],"SUCROAL S.A.":[9900000,7425000,7425000,6000000,7000000,9000000,6000000,7000000,9000000,6000000,7000000,9000000],"SUMIMAS S A S":[65268000,0,0,0,0,0,0,0,0,0,0,0],"SUMINISTROS GLAS S.A.S.":[4800000,0,0,5200000,0,1500000,0,0,4800000,0,0,5200000],"TAKAMI S A":[2686000,0,2400000,0,2400000,0,2000000,0,2400000,0,2000000,0],"T-VAPAN 500 S.A.S.":[29484000,46259000,24396000,42000000,35000000,2400000,29500000,37000000,42000000,35000000,50000000,40000000],"PLAYLAND":[0,0,0,16500000,0,16500000,0,16500000,0,16500000,0,16500000],"NUEVOS NEGOCIOS":[0,0,0,0,70000000,20000000,15000000,0,120000000,0,0,0],"VERTICAL COFFEE CO S.A.S":[5424000,2240000,0,0,0,0,0,0,0,0,0,0]},"total":6256443206};
   const VENTAS_INICIAL = {"anio":2026,"meses":[426514898,527735656,458514317,361168541,650717834,547915982,188136070,0,0,0,0,0],"clientes":{"SUMINISTROS GLAS S.A.S.":[4800000,0,0,0,4700000,0,0,0,0,0,0,0],"T-VAPAN 500 S.A.S.":[29484000,46259000,40890000,51674000,49474000,42194000,34772000,0,0,0,0,0],"INTERAMERICANA DE PRODUCTOS QUIMICOS DEL ECUADOR S.A. INTERQUIMEC":[25310896,-9054861,0,0,13092440,0,0,0,0,0,0,0],"SOCIEDAD DE APOYO AERONAUTICO SA":[3100000,4650000,11561500,7440000,3937000,4650000,4650000,0,0,0,0,0],"DISTRIBUIDORA DE VINOS Y LICORES SAS":[20776000,9886670,8573435,25314339,10740685,38999765,6400000,0,0,0,0,0],"LIPESA COLOMBIA S.A.S":[20920000,16780000,0,560000,0,0,0,0,0,0,0,0],"SUMIMAS S A S":[65268000,0,0,0,0,0,0,0,0,0,0,0],"COMPANIA GLOBAL DE PINTURAS SA":[119532050,14031642,31166588,21950960,29094488,40275632,1824000,0,0,0,0,0],"ANHIDRIDOS Y DERIVADOS DE COLOMBIA SAS":[26383625,36464000,58931425,78078625,38471375,17013375,27050000,0,0,0,0,0],"CARVAJAL SOLUCIONES DE COMUNICACION S.A.S.":[27429720,37678720,36255437,66780994,53433099,45698698,0,0,0,0,0,0],"SIPOTE BURRITO SA":[2686000,0,0,0,0,4800000,0,0,0,0,0,0],"TAKAMI S A":[2686000,0,0,0,12000000,0,0,0,0,0,0,0],"SERVICIOS AEROPORTUARIOS INTEGRADOS SAI S.A.S.":[2760392,0,0,1008000,324000,0,0,0,0,0,0,0],"SOLUCIONES INTEGRALES DE MOVILIDAD, ACCESO Y TRAFICO SAS":[3000000,600000,8450000,0,0,7050000,0,0,0,0,0,0],"SISTEMAS Y COMPUTADORES SA":[7863390,221468954,124358400,0,235011190,115560000,92448000,0,0,0,0,0],"CONCESIONARIA VUELA COMPANIA DE AVIACION S.A.P.I DE C.V SUCURSAL COLOMBIA":[-255000,0,0,0,0,0,0,0,0,0,0,0],"KRUGERCORPORATION S.A.S":[17727526,0,0,0,0,0,0,0,0,0,0,0],"VERTICAL COFFEE CO S.A.S":[5424000,2240000,1470000,7265000,0,2240000,0,0,0,0,0,0],"SUCROAL S.A.":[9900000,7425000,7425000,9900000,9900000,17325000,0,0,0,0,0,0],"OXIGENADOS Y DERIVADOS SAS":[7175000,0,4328000,0,7039000,24318000,0,0,0,0,0,0],"PREFLEX S A S":[9000000,9000000,9250000,0,18000000,0,8800000,0,0,0,0,0],"IDENFORMAS SAS":[4910000,14620000,4051000,5846400,10972400,11901800,835200,0,0,0,0,0],"LABORATORIO SERVINSUMOS S.A.":[1427299,1811706,1585385,2098394,1450686,1505320,0,0,0,0,0,0],"CARVAJAL TECNOLOGIA Y SERVICIOS S.A.S. BIC":[765000,1326000,0,765000,0,765000,0,0,0,0,0,0],"GIVAUDAN COLOMBIA SAS":[2336000,0,4734000,0,0,0,0,0,0,0,0,0],"FINEAROM SAS":[1569000,1380000,0,2470000,250000,900000,0,0,0,0,0,0],"MAPEI COLOMBIA S. A. S.":[4536000,5880000,0,250000,0,14465000,7225000,0,0,0,0,0],"HORTIFRUT COLOMBIA SAS":[0,18714000,39584454,17610000,3819000,22260000,0,0,0,0,0,0],"ESENCIA & CO SAS":[0,9600000,0,0,9000000,0,0,0,0,0,0,0],"MEGACOMERCIAL ZF S.A.S.":[0,1180000,412000,0,0,250000,805000,0,0,0,0,0],"SCHNEIDER ELECTRIC DE COLOMBIA SAS":[0,15769000,0,0,0,0,0,0,0,0,0,0],"ECOLAB COLOMBIA S.A.":[0,52383000,51723000,34060000,88311222,63986697,0,0,0,0,0,0],"O-TEK CENTRAL S.A.S.":[0,726240,0,400000,0,1375000,0,0,0,0,0,0],"MOONS COLOMBIA S.A.S.":[0,3894000,2424000,0,2735000,2495000,0,0,0,0,0,0],"INTERAMERICANA DE PRODUCTOS QUIMICOS S.A.S. INTERQUIM S.A.S.":[0,1008000,0,580000,1190000,0,0,0,0,0,0,0],"CAMPOFERT S.A.S":[0,2014584,413416,0,0,0,0,0,0,0,0,0],"ESPECIALIDADES DIAGNOSTICAS IHR S.A.S.":[0,0,504000,2840000,0,0,0,0,0,0,0,0],"AKZO NOBEL PERU S.A.C.":[0,0,9386028,0,0,10929484,0,0,0,0,0,0],"ANHIDRIDOS Y DERIVADOS DE COLOMBIA SAS 1":[0,0,1037250,1037250,1037250,1037250,0,0,0,0,0,0],"MARSAM BRANDS SAS":[0,0,0,2700000,100000,0,0,0,0,0,0,0],"MANE ANDINA S.A.S.":[0,0,0,16990000,16990000,16990000,0,0,0,0,0,0],"HRA INGREDIENTS SAS":[0,0,0,3549580,0,0,1486870,0,0,0,0,0],"PROMOTORA DE DIVERSION S.A.S DIVER S.A.S":[0,0,0,0,16500000,-501600,0,0,0,0,0,0],"QUIMICA COMERCIAL ANDINA S A S":[0,0,0,0,9240000,0,0,0,0,0,0,0],"HOKO COLOMBIA S.A.S":[0,0,0,0,3905000,11753500,0,0,0,0,0,0],"A LA PEPA SAS":[0,0,0,0,0,920000,0,0,0,0,0,0],"MUNDOTINTAS S.A.S":[0,0,0,0,0,990000,0,0,0,0,0,0],"HARMONY ROOTS SAS":[0,0,0,0,0,18123500,1840000,0,0,0,0,0],"PINTUCO COSTA RICA PCR":[0,0,0,0,0,7645561,0,0,0,0,0,0]},"total":3160703298,"ultimaFecha":"2026-07-07"};
+  const PRESUPUESTO_CODITEQ_INICIAL = {"anio":2026,"meses":[613832297,625383614,691496545,832578564,774584240,897671840,1120060728,841163192,1046180312,1012646044,1050942379,1088046169],"total":10594585924};
 </script>
 <!-- ███████████████████████████  FIN CONFIGURACIÓN  ███████████████████ -->
 
@@ -686,7 +689,7 @@
       <div class="upload-card compacto" id="dropzonePresupuesto" tabindex="0" role="button" aria-label="Cargar presupuesto mensual">
         <span class="icono">🎯</span>
         <strong>Presupuesto mes a mes</strong>
-        <small>Excel con una fila por cliente y columnas enero…diciembre (hoja "PROYECCIÓN"). Reemplaza el presupuesto vigente. Se carga una vez al año o cuando cambie.</small>
+        <small>Excel con dos hojas: "Presupuesto Magda" (una fila por cliente) y "Presupuesto Coditeq" (totales por mes). Columnas enero…diciembre. Reemplaza el presupuesto vigente. Se carga una vez al año o cuando cambie.</small>
         <div class="last" id="ultimaCargaPresupuesto"></div>
         <input type="file" id="fileInputPresupuesto" accept=".xlsx,.xls" hidden>
       </div>
@@ -706,9 +709,10 @@
 
     <div class="kpis" id="kpisVentas">
       <div class="kpi blue"><div class="v" id="kVentasYTD" title="">—</div><div class="l">Ventas a la fecha</div></div>
-      <div class="kpi"><div class="v" id="kPresYTD" title="">—</div><div class="l">Presupuesto a la fecha</div></div>
-      <div class="kpi ok"><div class="v" id="kCumplYTD">—</div><div class="l">Cumplimiento a la fecha</div></div>
-      <div class="kpi"><div class="v" id="kPresAnio" title="">—</div><div class="l">Presupuesto del año</div></div>
+      <div class="kpi ok"><div class="v" id="kCumplMagda">—</div><div class="l">Cumpl. a la fecha · Magda</div></div>
+      <div class="kpi ok"><div class="v" id="kCumplCoditeq">—</div><div class="l">Cumpl. a la fecha · Coditeq</div></div>
+      <div class="kpi"><div class="v" id="kPresMagdaAnio" title="">—</div><div class="l">Presupuesto Magda · año</div></div>
+      <div class="kpi"><div class="v" id="kPresCoditeqAnio" title="">—</div><div class="l">Presupuesto Coditeq · año</div></div>
       <div class="kpi"><div class="v" id="kProyeccion" title="">—</div><div class="l">Proyección de cierre</div></div>
     </div>
 
@@ -716,7 +720,8 @@
       <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
         <div class="grafica-titulo">Ventas reales vs presupuesto, por mes</div>
         <div class="leyenda">
-          <span class="leyenda-item"><i style="background:var(--line-strong)"></i>Presupuesto</span>
+          <span class="leyenda-item"><i style="background:var(--line-strong)"></i>Presupuesto Magda</span>
+          <span class="leyenda-item"><i style="background:var(--magenta)"></i>Presupuesto Coditeq</span>
           <span class="leyenda-item"><i style="background:var(--azul)"></i>Ventas</span>
           <span class="leyenda-item"><i style="background:var(--cyan)"></i>Mes en curso</span>
         </div>
@@ -818,7 +823,7 @@
 const ESTADOS = ['En proceso sin novedad','Con Novedad','Entregada'];
 const LS_FALLBACK = 'coditeq_tablero_op_magda_v1';
 let DB = { ordenes:{}, ultimaCarga:null, amortiguadores:{}, ultimaCargaBuffer:null, ultimaCargaSitio:null, ultimaCargaTransito:null,
-           presupuesto:null, ventas:null, ultimaCargaPresupuesto:null, ultimaCargaVentas:null, acuerdos:{} };
+           presupuesto:null, ventas:null, ultimaCargaPresupuesto:null, ultimaCargaVentas:null, acuerdos:{}, presupuestoCoditeq:null };
 let ALCANCE = { comercial: COMERCIAL_INICIAL, clientes: ALCANCE_INICIAL.slice() };
 let ALCANCE_SET = new Set();
 let tabActual = 'principal';
@@ -939,6 +944,7 @@ function iniciar(){
       DB.ultimaCargaPresupuesto=data.ultimaCargaPresupuesto||null;
       DB.ultimaCargaVentas=data.ultimaCargaVentas||null;
       DB.acuerdos=data.acuerdos||{};
+      DB.presupuestoCoditeq=data.presupuestoCoditeq||null;
       if(data.alcance){ ALCANCE=data.alcance; actualizarAlcanceSet(); }
       render(); // muestra datos del caché inmediatamente
     }
@@ -1014,9 +1020,10 @@ function iniciar(){
 
       let ventasListo=false;
       db.collection(COLECCION_VENTAS).onSnapshot(snap=>{
-        let pres=null, vent=null, meta=null;
+        let pres=null, vent=null, meta=null, presCod=null;
         snap.forEach(doc=>{
           if(doc.id==='presupuesto') pres=doc.data();
+          else if(doc.id==='presupuestoCoditeq') presCod=doc.data();
           else if(doc.id==='ventas') vent=doc.data();
           else if(doc.id==='meta') meta=doc.data();
         });
@@ -1029,6 +1036,7 @@ function iniciar(){
         }
         ventasListo=true;
         if(pres) DB.presupuesto=pres.datos||null;
+        if(presCod) DB.presupuestoCoditeq=presCod.datos||null;
         if(vent) DB.ventas=vent.datos||null;
         if(meta){ DB.ultimaCargaPresupuesto=meta.ultimaCargaPresupuesto||null; DB.ultimaCargaVentas=meta.ultimaCargaVentas||null; }
         guardarLocalFallback();
@@ -1083,6 +1091,7 @@ function modoLocal(){
       DB.ultimaCargaPresupuesto=data.ultimaCargaPresupuesto||null;
       DB.ultimaCargaVentas=data.ultimaCargaVentas||null;
       DB.acuerdos=data.acuerdos||{};
+      DB.presupuestoCoditeq=data.presupuestoCoditeq||null;
     }else{
       DB.amortiguadores={};
       BUFFER_INICIAL.forEach(b=>{
@@ -1102,7 +1111,7 @@ function guardarLocalFallback(){
     ultimaCargaSitio:DB.ultimaCargaSitio, ultimaCargaTransito:DB.ultimaCargaTransito,
     presupuesto:DB.presupuesto, ventas:DB.ventas,
     ultimaCargaPresupuesto:DB.ultimaCargaPresupuesto, ultimaCargaVentas:DB.ultimaCargaVentas,
-    acuerdos:DB.acuerdos,
+    acuerdos:DB.acuerdos, presupuestoCoditeq:DB.presupuestoCoditeq,
     alcance:ALCANCE
   })); }catch(e){}
 }
@@ -1550,12 +1559,14 @@ const MESES_LARGOS = ['enero','febrero','marzo','abril','mayo','junio','julio','
 
 function sembrarVentasSiVacio(){
   if(!DB.presupuesto && typeof PRESUPUESTO_INICIAL!=='undefined') DB.presupuesto=JSON.parse(JSON.stringify(PRESUPUESTO_INICIAL));
+  if(!DB.presupuestoCoditeq && typeof PRESUPUESTO_CODITEQ_INICIAL!=='undefined') DB.presupuestoCoditeq=JSON.parse(JSON.stringify(PRESUPUESTO_CODITEQ_INICIAL));
   if(!DB.ventas && typeof VENTAS_INICIAL!=='undefined') DB.ventas=JSON.parse(JSON.stringify(VENTAS_INICIAL));
 }
 function guardarVentasNube(){
   if(!modoNube) return;
   const batch=db.batch();
   batch.set(db.collection(COLECCION_VENTAS).doc('presupuesto'),{datos:DB.presupuesto||null});
+  batch.set(db.collection(COLECCION_VENTAS).doc('presupuestoCoditeq'),{datos:DB.presupuestoCoditeq||null});
   batch.set(db.collection(COLECCION_VENTAS).doc('ventas'),{datos:DB.ventas||null});
   batch.set(db.collection(COLECCION_VENTAS).doc('meta'),{
     ultimaCargaPresupuesto:DB.ultimaCargaPresupuesto||null, ultimaCargaVentas:DB.ultimaCargaVentas||null
@@ -1599,34 +1610,57 @@ function agruparClientes(pres,vent){
   return Object.values(g).map(e=>({nombre:e.presName||e.ventName,pm:e.pm,vm:e.vm}));
 }
 
-/* ---- Carga: Presupuesto mes a mes ---- */
+/* ---- Carga: Presupuesto mes a mes (hoja Magda por cliente + hoja Coditeq totales) ---- */
 async function procesarArchivoPresupuesto(file){
   const buf=await file.arrayBuffer();
   try{
     const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
-    const sh=wb.SheetNames.find(n=>normKey(n).includes('proyeccion'))||wb.SheetNames[0];
-    const anioMatch=String(sh).match(/(20\d{2})/);
-    const rows=XLSX.utils.sheet_to_json(wb.Sheets[sh],{defval:'',raw:true});
-    if(!rows.length){ toast('El presupuesto no tiene filas.'); return; }
-    const keys=Object.keys(rows[0]);
-    const kCliente=keys.find(k=>normKey(k).includes('cliente'))||keys[0];
-    const kMes=MESES_LARGOS.map(m=>keys.find(k=>normKey(k)===normKey(m))||keys.find(k=>normKey(k).includes(normKey(m))));
-    if(kMes.filter(Boolean).length<6){ toast('No se reconocieron las columnas de meses (enero…diciembre).'); return; }
-    const clientes={}; const meses=ceros();
-    rows.forEach(r=>{
-      const nombre=normCliente(r[kCliente]);
-      if(!nombre||nombre.includes('TOTAL GENERAL')) return;
-      const vals=kMes.map(k=>k?(Number(String(r[k]).replace(/[^\d.-]/g,''))||0):0);
-      if(!vals.some(v=>v)) return;
-      clientes[nombre]=vals.map(Math.round);
-      vals.forEach((v,i)=>meses[i]+=v);
+    const anioDe=nombre=>{ const m=String(nombre).match(/(20\d{2})/); return m?+m[1]:null; };
+    const mesesDeFila=(r,kMes)=>kMes.map(k=>k?(Number(String(r[k]).replace(/[^\d.-]/g,''))||0):0);
+    let cargoMagda=false, cargoCoditeq=false, resumen=[];
+
+    wb.SheetNames.forEach(sh=>{
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[sh],{defval:'',raw:true});
+      if(!rows.length) return;
+      const keys=Object.keys(rows[0]);
+      const kMes=MESES_LARGOS.map(m=>keys.find(k=>normKey(k)===normKey(m))||keys.find(k=>normKey(k).includes(normKey(m))));
+      if(kMes.filter(Boolean).length<6) return; // no es una hoja de presupuesto mensual
+      const nsh=normKey(sh);
+      const kCliente=keys.find(k=>normKey(k).includes('cliente'));
+      const esCoditeq=nsh.includes('coditeq') || (!kCliente && !nsh.includes('magda'));
+
+      if(esCoditeq){
+        // Totales mensuales (una o varias filas, sin desglose por cliente)
+        const meses=ceros();
+        rows.forEach(r=>{ mesesDeFila(r,kMes).forEach((v,i)=>meses[i]+=v); });
+        const total=meses.reduce((a,b)=>a+b,0);
+        if(total===0) return;
+        const anio=anioDe(sh)||(DB.presupuestoCoditeq?DB.presupuestoCoditeq.anio:(DB.presupuesto?DB.presupuesto.anio:new Date().getFullYear()));
+        DB.presupuestoCoditeq={anio,meses:meses.map(Math.round),total:Math.round(total)};
+        cargoCoditeq=true; resumen.push(`Coditeq ${fmtMM(total)}`);
+      }else{
+        // Magda: por cliente
+        const kCli=kCliente||keys[0];
+        const clientes={}; const meses=ceros();
+        rows.forEach(r=>{
+          const nombre=normCliente(r[kCli]);
+          if(!nombre||nombre.includes('TOTAL GENERAL')) return;
+          const vals=mesesDeFila(r,kMes);
+          if(!vals.some(v=>v)) return;
+          clientes[nombre]=vals.map(Math.round);
+          vals.forEach((v,i)=>meses[i]+=v);
+        });
+        if(!Object.keys(clientes).length) return;
+        const anio=anioDe(sh)||(DB.presupuesto?DB.presupuesto.anio:new Date().getFullYear());
+        DB.presupuesto={anio,meses:meses.map(Math.round),clientes,total:Math.round(meses.reduce((a,b)=>a+b,0))};
+        cargoMagda=true; resumen.push(`Magda ${Object.keys(clientes).length} clientes ${fmtMM(DB.presupuesto.total)}`);
+      }
     });
-    if(!Object.keys(clientes).length){ toast('No se encontraron clientes con presupuesto.'); return; }
-    const anio=anioMatch?+anioMatch[1]:(DB.presupuesto?DB.presupuesto.anio:new Date().getFullYear());
-    DB.presupuesto={anio,meses:meses.map(Math.round),clientes,total:Math.round(meses.reduce((a,b)=>a+b,0))};
-    DB.ultimaCargaPresupuesto={fecha:new Date().toLocaleString('es-CO'),archivo:file.name,filas:Object.keys(clientes).length};
+
+    if(!cargoMagda && !cargoCoditeq){ toast('No se reconoció ninguna hoja de presupuesto (revisa las columnas de meses).'); return; }
+    DB.ultimaCargaPresupuesto={fecha:new Date().toLocaleString('es-CO'),archivo:file.name};
     guardarVentas(); render();
-    toast(`Presupuesto ${anio} cargado: ${Object.keys(clientes).length} clientes · ${fmtMM(DB.presupuesto.total)}`);
+    toast('Presupuesto cargado · '+resumen.join(' · '));
   }catch(e){ toast('No se pudo leer el presupuesto: '+e.message); }
 }
 
@@ -1699,22 +1733,32 @@ function renderVentas(){
   const ventYTD=ventMes.slice(0,nMes).reduce((a,b)=>a+b,0);
   const presAnio=presMes.reduce((a,b)=>a+b,0);
   const cumpl=presYTD?ventYTD/presYTD:0;
-  // proyección de cierre: ventas reales acumuladas (incl. mes en curso) + presupuesto de los meses aún no facturados
+  // Presupuesto Coditeq (solo totales mensuales)
+  const presCodMes=(DB.presupuestoCoditeq&&DB.presupuestoCoditeq.meses)||ceros();
+  const presCodYTD=presCodMes.slice(0,nMes).reduce((a,b)=>a+b,0);
+  const presCodAnio=presCodMes.reduce((a,b)=>a+b,0);
+  const cumplCod=presCodYTD?ventYTD/presCodYTD:0;
+  // proyección de cierre: ventas reales acumuladas (incl. mes en curso) + presupuesto Magda de los meses aún no facturados
   const ventReal=ventMes.slice(0,corte).reduce((a,b)=>a+b,0);
   const proy=ventReal+presMes.slice(corte).reduce((a,b)=>a+b,0);
 
   const set=(id,val,tip)=>{const el=document.getElementById(id); el.textContent=val; if(tip!=null) el.title=tip;};
   set('kVentasYTD',fmtMM(ventYTD),fmtCOP(ventYTD));
-  set('kPresYTD',fmtMM(presYTD),fmtCOP(presYTD));
-  set('kPresAnio',fmtMM(presAnio),fmtCOP(presAnio));
-  set('kProyeccion',fmtMM(proy),fmtCOP(proy)+' (ventas a la fecha + presupuesto restante)');
-  const kc=document.getElementById('kCumplYTD');
-  kc.textContent=presYTD?(cumpl*100).toFixed(0)+'%':'—';
-  kc.parentElement.className='kpi '+(cumpl>=1?'ok':cumpl>=.85?'warn':'alert');
+  set('kPresMagdaAnio',fmtMM(presAnio),fmtCOP(presAnio));
+  set('kPresCoditeqAnio',fmtMM(presCodAnio),fmtCOP(presCodAnio));
+  set('kProyeccion',fmtMM(proy),fmtCOP(proy)+' (ventas a la fecha + presupuesto Magda restante)');
+  const kcm=document.getElementById('kCumplMagda');
+  kcm.textContent=presYTD?(cumpl*100).toFixed(0)+'%':'—';
+  kcm.title=`Ventas ${fmtMM(ventYTD)} vs presupuesto Magda ${fmtMM(presYTD)} a la fecha`;
+  kcm.parentElement.className='kpi '+(cumpl>=1?'ok':cumpl>=.85?'warn':'alert');
+  const kcc=document.getElementById('kCumplCoditeq');
+  kcc.textContent=presCodYTD?(cumplCod*100).toFixed(0)+'%':'—';
+  kcc.title=`Ventas ${fmtMM(ventYTD)} vs presupuesto Coditeq ${fmtMM(presCodYTD)} a la fecha`;
+  kcc.parentElement.className='kpi '+(cumplCod>=1?'ok':cumplCod>=.85?'warn':'alert');
   document.getElementById('countVentas').textContent=presYTD?(cumpl*100).toFixed(0)+'%':'—';
 
-  document.getElementById('graficaMeses').innerHTML=svgBarras(presMes,ventMes,corte);
-  document.getElementById('graficaAcumulada').innerHTML=svgAcumulada(presMes,ventMes,corte);
+  document.getElementById('graficaMeses').innerHTML=svgBarras(presMes,presCodMes,ventMes,corte);
+  document.getElementById('graficaAcumulada').innerHTML=svgAcumulada(presMes,presCodMes,ventMes,corte);
 
   const q=(document.getElementById('fBuscarVentas').value||'').toLowerCase();
   const ord=document.getElementById('fOrdenVentas').value;
@@ -1759,56 +1803,57 @@ function renderVentas(){
   document.getElementById('countFiltroVentas').textContent=`${filas.length} clientes`+(nFuera?` · ${nFuera} fuera de presupuesto`:'');
 }
 
-/* ---- Gráfica de barras: presupuesto vs ventas por mes ---- */
-function svgBarras(pres,vent,corte){
+/* ---- Gráfica de barras: presupuesto Magda / Coditeq / ventas por mes ---- */
+function svgBarras(pres,cod,vent,corte){
   const W=720,H=250,mL=48,mR=12,mT=14,mB=26;
   const iw=W-mL-mR, ih=H-mT-mB, base=mT+ih;
-  const max=Math.max(1,...pres,...vent)*1.12;
+  const max=Math.max(1,...pres,...cod,...vent)*1.12;
   const y=v=>base-(v/max)*ih;
-  const gw=iw/12, bw=Math.min(16,gw*0.32);
+  const gw=iw/12, bw=Math.min(12,gw*0.22), gap=2, grp=3*bw+2*gap;
   let g='';
   for(let i=0;i<=4;i++){ const val=max*i/4, yy=y(val);
     g+=`<line class="g-grid" x1="${mL}" y1="${yy.toFixed(1)}" x2="${W-mR}" y2="${yy.toFixed(1)}"/>`;
     g+=`<text class="g-lbl" x="${mL-6}" y="${(yy+3).toFixed(1)}" text-anchor="end">${Math.round(val/1e6)}M</text>`;
   }
   for(let m=0;m<12;m++){
-    const cx=mL+gw*m+gw/2, xp=cx-bw-1, xv=cx+1;
-    const hp=base-y(pres[m]), hv=base-y(vent[m]);
-    g+=`<rect class="g-bar g-bar-pres" x="${xp.toFixed(1)}" y="${y(pres[m]).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,hp).toFixed(1)}" rx="2"><title>${MESES_CORTOS[m]} · Presupuesto ${fmtCOP(pres[m])}</title></rect>`;
+    const cx=mL+gw*m+gw/2, start=cx-grp/2;
+    const bar=(x,val,cls,lbl)=>`<rect class="g-bar ${cls}" x="${x.toFixed(1)}" y="${y(val).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,base-y(val)).toFixed(1)}" rx="1.5"><title>${MESES_CORTOS[m]} · ${lbl} ${fmtCOP(val)}</title></rect>`;
     const curso=(m+1)===corte;
-    g+=`<rect class="g-bar g-bar-vent${curso?' curso':''}" x="${xv.toFixed(1)}" y="${y(vent[m]).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,hv).toFixed(1)}" rx="2"><title>${MESES_CORTOS[m]} · Ventas ${fmtCOP(vent[m])}${curso?' (mes en curso, parcial)':''}</title></rect>`;
+    g+=bar(start,pres[m],'g-bar-pres','Presup. Magda');
+    g+=bar(start+bw+gap,cod[m],'g-bar-cod','Presup. Coditeq');
+    g+=bar(start+2*(bw+gap),vent[m],'g-bar-vent'+(curso?' curso':''),'Ventas'+(curso?' (mes en curso, parcial)':''));
     g+=`<text class="g-mes" x="${cx.toFixed(1)}" y="${H-8}" text-anchor="middle">${MESES_CORTOS[m]}</text>`;
   }
   g+=`<line class="g-axis" x1="${mL}" y1="${base.toFixed(1)}" x2="${W-mR}" y2="${base.toFixed(1)}"/>`;
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Ventas vs presupuesto por mes">${g}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Ventas vs presupuesto Magda y Coditeq por mes">${g}</svg>`;
 }
 
-/* ---- Gráfica acumulada ---- */
-function svgAcumulada(pres,vent,corte){
+/* ---- Gráfica acumulada: presupuesto Magda / Coditeq / ventas ---- */
+function svgAcumulada(pres,cod,vent,corte){
   const W=720,H=210,mL=48,mR=12,mT=14,mB=26;
   const iw=W-mL-mR, ih=H-mT-mB, base=mT+ih;
-  const cp=[],cv=[]; let ap=0,av=0;
-  for(let m=0;m<12;m++){ ap+=pres[m]; cp.push(ap); av+=vent[m]; cv.push(av); }
-  const max=Math.max(1,cp[11],cv[corte-1])*1.08;
+  const cp=[],cc=[],cv=[]; let ap=0,ac=0,av=0;
+  for(let m=0;m<12;m++){ ap+=pres[m]; cp.push(ap); ac+=cod[m]; cc.push(ac); av+=vent[m]; cv.push(av); }
+  const max=Math.max(1,cp[11],cc[11],cv[corte-1])*1.08;
   const x=m=>mL+(iw/11)*m, y=v=>base-(v/max)*ih;
   let g='';
   for(let i=0;i<=4;i++){ const val=max*i/4, yy=y(val);
     g+=`<line class="g-grid" x1="${mL}" y1="${yy.toFixed(1)}" x2="${W-mR}" y2="${yy.toFixed(1)}"/>`;
     g+=`<text class="g-lbl" x="${mL-6}" y="${(yy+3).toFixed(1)}" text-anchor="end">${Math.round(val/1e6)}M</text>`;
   }
-  const pPath=cp.map((v,m)=>`${m?'L':'M'}${x(m).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  const linea=arr=>arr.map((v,m)=>`${m?'L':'M'}${x(m).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
   const vv=cv.slice(0,corte);
-  const vPath=vv.map((v,m)=>`${m?'L':'M'}${x(m).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
   if(vv.length){
-    const vArea=vPath+` L${x(corte-1).toFixed(1)} ${base.toFixed(1)} L${x(0).toFixed(1)} ${base.toFixed(1)} Z`;
+    const vArea=linea(vv)+` L${x(corte-1).toFixed(1)} ${base.toFixed(1)} L${x(0).toFixed(1)} ${base.toFixed(1)} Z`;
     g+=`<path class="g-area" d="${vArea}"/>`;
   }
-  g+=`<path class="g-line-pres" d="${pPath}"/>`;
-  if(vv.length) g+=`<path class="g-line-vent" d="${vPath}"/>`;
+  g+=`<path class="g-line-pres" d="${linea(cp)}"/>`;
+  g+=`<path class="g-line-cod" d="${linea(cc)}"/>`;
+  if(vv.length) g+=`<path class="g-line-vent" d="${linea(vv)}"/>`;
   vv.forEach((v,m)=>{ g+=`<circle class="g-dot" cx="${x(m).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3"><title>${MESES_CORTOS[m]} · Ventas acum. ${fmtCOP(v)}</title></circle>`; });
   for(let m=0;m<12;m++) g+=`<text class="g-mes" x="${x(m).toFixed(1)}" y="${H-8}" text-anchor="middle">${MESES_CORTOS[m]}</text>`;
   g+=`<line class="g-axis" x1="${mL}" y1="${base.toFixed(1)}" x2="${W-mR}" y2="${base.toFixed(1)}"/>`;
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Acumulado ventas vs presupuesto">${g}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Acumulado ventas vs presupuesto Magda y Coditeq">${g}</svg>`;
 }
 
 /* ---- Exportar a Excel ---- */
@@ -1832,7 +1877,13 @@ function exportarVentas(){
   aoa.push(['TOTAL','',pmT.slice(0,nMes).reduce((a,b)=>a+b,0),vmT.slice(0,nMes).reduce((a,b)=>a+b,0),'',pmT.reduce((a,b)=>a+b,0),vmT.reduce((a,b)=>a+b,0),'']);
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Ventas vs Presup');
+  XLSX.utils.book_append_sheet(wb,ws,'Detalle por cliente');
+  // Hoja de resumen mensual: Presupuesto Magda, Presupuesto Coditeq y Ventas
+  const codT=(DB.presupuestoCoditeq&&DB.presupuestoCoditeq.meses)||ceros();
+  const resumen=[['Mes','Presupuesto Magda','Presupuesto Coditeq','Ventas']];
+  for(let m=0;m<12;m++) resumen.push([MESES_CORTOS[m],pmT[m]||0,codT[m]||0,vmT[m]||0]);
+  resumen.push(['TOTAL',pmT.reduce((a,b)=>a+b,0),codT.reduce((a,b)=>a+b,0),vmT.reduce((a,b)=>a+b,0)]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumen),'Resumen mensual');
   XLSX.writeFile(wb,`Ventas_vs_Presupuesto_${anio}.xlsx`);
 }
 
