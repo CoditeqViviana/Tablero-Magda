@@ -17,7 +17,8 @@
     --ok:#1E7A46; --ok-bg:#E8F5EC;
     --warn:#A8650A; --warn-bg:#FCF1DE;
     --danger:#B3261E; --danger-bg:#FBEAE8;
-    --cyan:#009FC7; --magenta:#D6006F; --amarillo:#F2B600; --negro:#1B2430;
+    --cyan:#009FC7; --magenta:#D6006F;
+  --rojo-coditeq:#C8102E; --amarillo:#F2B600; --negro:#1B2430;
     --mono:'IBM Plex Mono',monospace; --disp:'Archivo',sans-serif; --body:'Inter',system-ui,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -132,12 +133,12 @@
   .g-lbl{font-family:var(--mono);font-size:10px;fill:var(--ink-soft)}
   .g-mes{font-family:var(--disp);font-size:11px;font-weight:600;fill:var(--ink)}
   .g-bar-pres{fill:var(--line-strong)}
-  .g-bar-cod{fill:var(--magenta)}
+  .g-bar-cod{fill:var(--rojo-coditeq)}
   .g-bar-vent{fill:var(--azul)}
   .g-bar-vent.curso{fill:var(--cyan)}
   .g-bar:hover{opacity:.82}
   .g-line-pres{fill:none;stroke:var(--line-strong);stroke-width:2.5}
-  .g-line-cod{fill:none;stroke:var(--magenta);stroke-width:2.5}
+  .g-line-cod{fill:none;stroke:var(--rojo-coditeq);stroke-width:2.5}
   .g-line-vent{fill:none;stroke:var(--azul);stroke-width:2.5}
   .g-dot{fill:var(--azul)}
   .g-area{fill:var(--azul);opacity:.06}
@@ -721,7 +722,7 @@
         <div class="grafica-titulo">Ventas reales vs presupuesto, por mes</div>
         <div class="leyenda">
           <span class="leyenda-item"><i style="background:var(--line-strong)"></i>Presupuesto Magda</span>
-          <span class="leyenda-item"><i style="background:var(--magenta)"></i>Presupuesto Coditeq</span>
+          <span class="leyenda-item"><i style="background:var(--rojo-coditeq)"></i>Presupuesto Coditeq</span>
           <span class="leyenda-item"><i style="background:var(--azul)"></i>Ventas</span>
           <span class="leyenda-item"><i style="background:var(--cyan)"></i>Mes en curso</span>
         </div>
