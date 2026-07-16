@@ -189,6 +189,11 @@
   td.mono{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
   td .op{font-family:var(--mono);font-weight:600;font-size:13px;color:var(--azul)}
   td .np{font-family:var(--mono);font-size:11px;color:var(--ink-soft);display:block;margin-top:1px}
+  td .badge-cerrada{display:inline-block;margin-top:3px;font-family:var(--mono);font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--danger);background:var(--danger-bg);border:1px solid #F4A9A6;border-radius:20px;padding:1px 7px}
+  tr.fila-cerrada td{background:#FCFBFA}
+  tr.fila-cerrada .cliente,tr.fila-cerrada .prod{opacity:.65}
+  .actualizacion-info{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:0 0 14px;display:flex;align-items:center;gap:7px}
+  .actualizacion-info b{color:var(--ink);font-weight:600}
   td .cliente{font-weight:600;font-size:12.5px}
   td .prod{color:var(--ink-soft);font-size:11.5px;display:block;margin-top:2px;max-width:330px}
   .num{text-align:right}
@@ -491,6 +496,7 @@
         <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
       </div>
     </div>
+    <div class="actualizacion-info" id="infoActualizacion"></div>
     <div class="kpis">
       <div class="kpi blue"><div class="v" id="kActivas">0</div><div class="l">OP activas</div></div>
       <div class="kpi warn"><div class="v" id="kNovedad">0</div><div class="l">Con novedad</div></div>
@@ -1237,6 +1243,19 @@ async function procesarArchivo(file){
     });
     DB.ultimaCarga={fecha:new Date().toLocaleString('es-CO'),archivo:file.name,filas:rows.length};
 
+    // Detección de OP cerradas: las que estaban en el tablero (en alcance, no Entregadas)
+    // y ya no vienen en el reporte cargado se marcan como "cerrada". Si reaparecen, se reabren.
+    const enReporte=new Set(cambios);
+    let cerradasNuevas=0;
+    Object.values(DB.ordenes).forEach(o=>{
+      if(o.estado==='Entregada' || !enAlcance(o.cliente)) return;
+      if(enReporte.has(o.op)){
+        if(o.cerrada){ o.cerrada=false; o.fechaCierre=null; }   // reapareció en el reporte
+      }else if(!o.cerrada){
+        o.cerrada=true; o.fechaCierre=DB.ultimaCarga.fecha; cerradasNuevas++; cambios.push(o.op);
+      }
+    });
+
     if(modoNube){
       // Escritura por lotes (límite Firestore: 500 operaciones por lote)
       for(let i=0;i<cambios.length;i+=400){
@@ -1255,8 +1274,9 @@ async function procesarArchivo(file){
       guardarMetaBuffer();
     }
     const sufijoAlcance=fueraAlcance?` · ${fueraAlcance} fuera del alcance de ${ALCANCE.comercial||'este comercial'} (no se cargaron)`:'';
+    const sufijoCerradas=cerradasNuevas?` · ${cerradasNuevas} cerradas (ya no están en el reporte)`:'';
     const sufijoBuffer=cambiosBuffer.length?` · ${cambiosBuffer.length} referencias MP/PT con tránsito de producción actualizado`:'';
-    toast(`Excel cargado: ${nuevas} OP nuevas · ${actualizadas} actualizadas${sufijoAlcance}${sufijoBuffer}`);
+    toast(`Excel cargado: ${nuevas} OP nuevas · ${actualizadas} actualizadas${sufijoCerradas}${sufijoAlcance}${sufijoBuffer}`);
     if(!modoNube) render();
   }catch(err){ toast('Error al leer el archivo: '+err.message); }
 }
@@ -2007,7 +2027,9 @@ function cambiarTab(t){
 
 function render(){
   const todas=Object.values(DB.ordenes).filter(o=>enAlcance(o.cliente));
-  const activas=todas.filter(o=>o.estado!=='Entregada');
+  const enTablero=todas.filter(o=>o.estado!=='Entregada');   // se muestran (activas + cerradas)
+  const activas=enTablero.filter(o=>!o.cerrada);             // solo activas (para KPIs)
+  const cerradas=enTablero.filter(o=>o.cerrada);
   const entregadas=todas.filter(o=>o.estado==='Entregada');
   const hoy=hoyISO();
 
@@ -2018,6 +2040,9 @@ function render(){
   document.getElementById('ultimaCarga').textContent=DB.ultimaCarga
     ? `Última carga: ${DB.ultimaCarga.archivo} · ${DB.ultimaCarga.fecha} · ${DB.ultimaCarga.filas} filas`
     : 'Aún no se ha cargado ningún archivo.';
+  document.getElementById('infoActualizacion').innerHTML=DB.ultimaCarga
+    ? `🕒 Última actualización: <b>${esc(DB.ultimaCarga.fecha)}</b>`+(cerradas.length?` · ${cerradas.length} OP cerradas en esta vista`:'')
+    : '🕒 Sin actualizaciones aún · carga el Excel diario de OP.';
 
   const sel=document.getElementById('fCentro'); const val=sel.value;
   const centros=[...new Set(activas.flatMap(o=>(o.centro||'').split(',').map(s=>s.trim()).filter(Boolean)))].sort();
@@ -2038,7 +2063,7 @@ function render(){
   const fe=document.getElementById('fEstado').value;
   const fc=document.getElementById('fCentro').value;
   const ord=document.getElementById('fOrden').value;
-  let lista=activas.filter(o=>{
+  let lista=enTablero.filter(o=>{
     if(fe&&o.estado!==fe) return false;
     if(fc&&!(o.centro||'').includes(fc)) return false;
     if(q){ const blob=`${o.op} ${o.np} ${o.cliente} ${o.descripcion} ${o.oc}`.toLowerCase(); if(!blob.includes(q)) return false; }
@@ -2051,16 +2076,17 @@ function render(){
     cliente:(a,b)=>(a.cliente||'').localeCompare(b.cliente||''),
     op:(a,b)=>(a.op||'').localeCompare(b.op||'',undefined,{numeric:true})
   }[ord];
-  lista.sort(cmp);
-  document.getElementById('countFiltro').textContent=`${lista.length} de ${activas.length} OP`;
+  lista.sort((a,b)=>((a.cerrada?1:0)-(b.cerrada?1:0))||(cmp?cmp(a,b):0));  // cerradas al final
+  const nCerrFiltro=lista.filter(o=>o.cerrada).length;
+  document.getElementById('countFiltro').textContent=`${lista.length} de ${enTablero.length} OP`+(nCerrFiltro?` · ${nCerrFiltro} cerradas`:'');
 
   document.getElementById('bodyPrincipal').innerHTML=lista.map(o=>{
     const asig=diffDias(o.fechaCreacion,o.fechaEntrega);
     const rest=o.fechaEntrega?diffDias(hoy,o.fechaEntrega):null;
     const restCls=rest==null?'asig':(rest<0?'bad':(rest<=3?'warn':'ok'));
     const eCls=o.estado==='Con Novedad'?'e-novedad':'e-proceso';
-    return `<tr>
-      <td><span class="op">${esc(o.op)}</span><span class="np">${esc(o.np)}</span></td>
+    return `<tr${o.cerrada?' class="fila-cerrada"':''}>
+      <td><span class="op">${esc(o.op)}</span><span class="np">${esc(o.np)}</span>${o.cerrada?`<span class="badge-cerrada" title="Ya no aparece en el último reporte cargado${o.fechaCierre?' · '+esc(o.fechaCierre):''}">cerrada</span>`:''}</td>
       <td><span class="cliente">${esc(o.cliente)}</span><span class="prod" title="${esc(o.descripcion)}">${esc(o.descripcion)}</span></td>
       <td class="mono num">${fmtNum(o.cantidad)}</td>
       <td class="mono">${fmtFecha(o.fechaCreacion)}</td>
