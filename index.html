@@ -124,11 +124,11 @@
   .kpi .v{font-family:var(--mono);font-weight:600;font-size:26px;letter-spacing:-.5px}
   .kpi .l{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
   .kpi.alert .v{color:var(--danger)} .kpi.warn .v{color:var(--warn)} .kpi.ok .v{color:var(--ok)} .kpi.blue .v{color:var(--azul)}
-  .prom-dual{display:inline-flex;align-items:baseline;gap:7px}
-  .prom-dual .prom-sep{color:var(--line-strong);font-weight:400}
   .prom-a{color:var(--azul)}
-  .prom-leg{display:block;text-transform:none;letter-spacing:0;font-size:10px;color:var(--ink-soft);margin-top:1px}
-  .prom-leg .prom-a{font-weight:700}
+  .kpi-prom{display:flex;flex-direction:column;justify-content:center;gap:8px}
+  .kpi-prom .prom-row{display:flex;align-items:center;gap:9px}
+  .kpi-prom .prom-num{font-family:var(--mono);font-weight:600;font-size:23px;letter-spacing:-.5px;min-width:32px;text-align:right}
+  .kpi-prom .prom-lbl{font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;line-height:1.2}
 
   /* ---- Gráficas Ventas vs Presupuesto ---- */
   .grafica-titulo{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink)}
@@ -543,7 +543,7 @@
       <div class="kpi warn"><div class="v" id="kNovedad">0</div><div class="l">Con novedad</div></div>
       <div class="kpi alert"><div class="v" id="kVencidas">0</div><div class="l">Vencidas</div></div>
       <div class="kpi"><div class="v" id="kProximas">0</div><div class="l">Vencen en ≤ 3 días</div></div>
-      <div class="kpi"><div class="v prom-dual"><span id="kPromProg" class="prom-a">0</span><span class="prom-sep">·</span><span id="kPromResto">0</span></div><div class="l">Prom. días asignados <span class="prom-leg"><b class="prom-a">Programadas</b> y Estandar</span></div></div>
+      <div class="kpi kpi-prom"><div class="prom-row"><span class="prom-num prom-a" id="kPromProg">0</span><span class="prom-lbl">Prom. días OP Programadas</span></div><div class="prom-row"><span class="prom-num" id="kPromResto">0</span><span class="prom-lbl">Prom. días OP Estandar</span></div></div>
       <div class="kpi alert"><div class="v" id="kCriticosMP">0</div><div class="l">MP/PT en zona crítica</div></div>
     </div>
 
