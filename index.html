@@ -124,6 +124,11 @@
   .kpi .v{font-family:var(--mono);font-weight:600;font-size:26px;letter-spacing:-.5px}
   .kpi .l{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
   .kpi.alert .v{color:var(--danger)} .kpi.warn .v{color:var(--warn)} .kpi.ok .v{color:var(--ok)} .kpi.blue .v{color:var(--azul)}
+  .prom-dual{display:inline-flex;align-items:baseline;gap:7px}
+  .prom-dual .prom-sep{color:var(--line-strong);font-weight:400}
+  .prom-a{color:var(--azul)}
+  .prom-leg{display:block;text-transform:none;letter-spacing:0;font-size:10px;color:var(--ink-soft);margin-top:1px}
+  .prom-leg .prom-a{font-weight:700}
 
   /* ---- Gráficas Ventas vs Presupuesto ---- */
   .grafica-titulo{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink)}
@@ -538,7 +543,7 @@
       <div class="kpi warn"><div class="v" id="kNovedad">0</div><div class="l">Con novedad</div></div>
       <div class="kpi alert"><div class="v" id="kVencidas">0</div><div class="l">Vencidas</div></div>
       <div class="kpi"><div class="v" id="kProximas">0</div><div class="l">Vencen en ≤ 3 días</div></div>
-      <div class="kpi"><div class="v" id="kPromedio">0</div><div class="l">Prom. días asignados</div></div>
+      <div class="kpi"><div class="v prom-dual"><span id="kPromProg" class="prom-a">0</span><span class="prom-sep">·</span><span id="kPromResto">0</span></div><div class="l">Prom. días asignados <span class="prom-leg"><b class="prom-a">Programadas</b> y Estandar</span></div></div>
       <div class="kpi alert"><div class="v" id="kCriticosMP">0</div><div class="l">MP/PT en zona crítica</div></div>
     </div>
 
@@ -2162,12 +2167,17 @@ function render(){
   const conNov=activas.filter(o=>o.estado==='Con Novedad').length;
   const venc=activas.filter(o=>o.fechaEntrega&&diffDias(hoy,o.fechaEntrega)<0).length;
   const prox=activas.filter(o=>{const d=o.fechaEntrega?diffDias(hoy,o.fechaEntrega):null;return d!==null&&d>=0&&d<=3;}).length;
-  const proms=activas.map(o=>diffDias(o.fechaCreacion,o.fechaEntrega)).filter(d=>d!=null);
+  const asignadosDe=arr=>arr.map(o=>diffDias(o.fechaCreacion,o.fechaEntrega)).filter(d=>d!=null);
+  const esProgramada=o=>normKey(o.tipo)==='programada';
+  const promProg=asignadosDe(activas.filter(esProgramada));
+  const promResto=asignadosDe(activas.filter(o=>!esProgramada(o)));
+  const promDe=arr=>arr.length?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):'—';
   document.getElementById('kActivas').textContent=activas.length;
   document.getElementById('kNovedad').textContent=conNov;
   document.getElementById('kVencidas').textContent=venc;
   document.getElementById('kProximas').textContent=prox;
-  document.getElementById('kPromedio').textContent=proms.length?Math.round(proms.reduce((a,b)=>a+b,0)/proms.length):'—';
+  document.getElementById('kPromProg').textContent=promDe(promProg);
+  document.getElementById('kPromResto').textContent=promDe(promResto);
   document.getElementById('kCriticosMP').textContent=Object.values(DB.amortiguadores).filter(b=>zonaBuffer(b.inventarioSitio,b.amortiguador)==='roja').length;
 
   const q=document.getElementById('fBuscar').value.toLowerCase();
