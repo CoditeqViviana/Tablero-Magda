@@ -295,11 +295,16 @@
   //            editor = carga Excel, marca estados/entregas y registra acuerdos
   //            viewer = solo lectura (ve y filtra; no carga, no marca, no registra, no respalda)
   const USUARIOS = {
-    "viviana.pazmino@coditeq.com": "admin",   // Viviana Pazmiño  ← REEMPLAZA por el correo real
-    "pablo.montiel@coditeq.com":   "editor",  // Pablo Montiel    ← REEMPLAZA por el correo real
-    "magda.acosta@coditeq.com":    "viewer",  // Magda Acosta     ← REEMPLAZA por el correo real
-    "diana.madrid@coditeq.com":    "viewer"   // Diana Madrid     ← REEMPLAZA por el correo real
+    "viviana.pazmino@coditeq.com": "admin",   // Viviana Pazmiño           (administradora)
+    "pablo.montiel@coditeq.com":   "editor",  // Pablo Andrés Montiel      (editor)
+    "liliana.acosta@coditeq.com":  "viewer",  // Magda Liliana Acosta      (solo lectura)
+    "diana.madrid@coditeq.com":    "viewer",  // Diana Paola Madrid        (solo lectura)
+    "daniel.lopez@coditeq.com":    "viewer"   // Daniel López Marín        (solo lectura)
   };
+
+  // ── MODO TEMPORAL: clave compartida (mientras se configuran los usuarios en Firebase) ──
+  //    Para volver al inicio de sesión por correo, usa la versión con Firebase Authentication.
+  const CLAVE_ACCESO = "coditeq2026";
 
   // 3) Nombres de las colecciones en Firestore (no es necesario cambiarlos)
   const COLECCION_OP = "op_magda";
@@ -450,12 +455,10 @@
   <div class="regbar" aria-hidden="true"><span class="c"></span><span class="m"></span><span class="y"></span><span class="k"></span></div>
   <div class="card">
     <h2>Tablero de Seguimiento OP</h2>
-    <p>Coditeq · Inicia sesión con tu correo y contraseña</p>
-    <input type="email" id="gateEmail" placeholder="correo@coditeq.com" autocomplete="username" autocapitalize="off" spellcheck="false">
-    <input type="password" id="gateInput" placeholder="Contraseña" autocomplete="current-password">
+    <p>Coditeq · Ingresa la clave de acceso para ver el tablero</p>
+    <input type="password" id="gateInput" placeholder="••••••••" autocomplete="off">
     <div class="err" id="gateErr"></div>
-    <button class="btn primary" style="width:100%;justify-content:center" onclick="iniciarSesion()" id="gateBtn">Ingresar</button>
-    <button class="gate-link" onclick="recuperarClave()">¿Olvidaste tu contraseña?</button>
+    <button class="btn primary" style="width:100%;justify-content:center" onclick="verificarClave()">Entrar</button>
   </div>
 </div>
 
@@ -983,8 +986,13 @@ function aplicarRol(){
   }
   const bs=document.getElementById('btnCerrarSesion'); if(bs) bs.hidden=!ROL;
 }
-document.getElementById('gateInput').addEventListener('keydown',e=>{ if(e.key==='Enter') iniciarSesion(); });
-document.getElementById('gateEmail').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('gateInput').focus(); });
+function verificarClave(){
+  const v=document.getElementById('gateInput').value;
+  if(v===CLAVE_ACCESO){ sessionStorage.setItem('op_gate_ok','1'); ocultarGate(); gateError(''); }
+  else{ gateError('Clave incorrecta. Intenta de nuevo.'); }
+}
+document.getElementById('gateInput').addEventListener('keydown',e=>{ if(e.key==='Enter') verificarClave(); });
+if(sessionStorage.getItem('op_gate_ok')==='1') ocultarGate();
 
 /* ---------- Utilidades ---------- */
 function hoyISO(){ const d=new Date(); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); }
@@ -1036,10 +1044,10 @@ function iniciar(){
   if(firebaseConfigurado()){
     try{
       firebase.initializeApp(FIREBASE_CONFIG);
-      auth=firebase.auth();
       db=firebase.firestore();
-      try{ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }catch(e){}
-      setConexion('config','Inicia sesión');
+      setConexion('on','En línea · sincronizado');
+      ROL='admin';                       // modo temporal con clave compartida: acceso completo
+      document.body.dataset.rol='admin';
 
       let datosConectados=false;
       function conectarDatos(){
@@ -1142,20 +1150,7 @@ function iniciar(){
       });
       } // ← fin de conectarDatos()
 
-      auth.onAuthStateChanged(function(user){
-        if(user){
-          const rol=rolDe(user.email);
-          if(!rol){
-            gateError('El correo '+(user.email||'')+' no tiene acceso al tablero. Contacta a la administradora.');
-            mostrarGate(); setConexion('off','Correo sin acceso'); auth.signOut(); return;
-          }
-          ROL=rol; aplicarRol(); ocultarGate(); gateError('');
-          setConexion('on','En línea · '+nombreRol(rol));
-          if(!datosConectados){ datosConectados=true; conectarDatos(); }
-        }else{
-          ROL=null; aplicarRol(); mostrarGate(); setConexion('config','Inicia sesión');
-        }
-      });
+      if(!datosConectados){ datosConectados=true; conectarDatos(); }
     }catch(e){
       setConexion('off','Error de configuración Firebase');
       modoLocal();
@@ -1163,7 +1158,7 @@ function iniciar(){
   }else{
     document.getElementById('configAviso').style.display='block';
     setConexion('config','Modo local (sin Firebase)');
-    ROL='admin'; aplicarRol(); ocultarGate();
+    ROL='admin'; document.body.dataset.rol='admin';
     modoLocal();
   }
 }
