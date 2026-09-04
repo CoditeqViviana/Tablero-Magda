@@ -6,6 +6,7 @@
 <title>Tablero Seguimiento OP · Coditeq</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -192,6 +193,7 @@
   td .badge-cerrada{display:inline-block;margin-top:3px;font-family:var(--mono);font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--danger);background:var(--danger-bg);border:1px solid #F4A9A6;border-radius:20px;padding:1px 7px}
   tr.fila-cerrada td{background:#FCFBFA}
   tr.fila-cerrada .cliente,tr.fila-cerrada .prod{opacity:.65}
+  .tipo-chip{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--azul);background:var(--azul-claro);border-radius:20px;padding:2px 9px;white-space:nowrap}
   .actualizacion-info{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:0 0 14px;display:flex;align-items:center;gap:7px}
   .actualizacion-info b{color:var(--ink);font-weight:600}
   td .cliente{font-weight:600;font-size:12.5px}
@@ -238,7 +240,23 @@
   #gate input{width:100%;padding:11px 14px;border:1px solid var(--line-strong);border-radius:8px;font-family:var(--mono);
     font-size:14px;text-align:center;letter-spacing:.2em;margin-bottom:12px}
   #gate .err{color:var(--danger);font-size:12px;min-height:16px;margin-bottom:8px}
+  #gate input[type=email]{text-align:left;letter-spacing:normal;font-family:var(--body)}
+  #gate input[type=password]{text-align:left;letter-spacing:normal;font-family:var(--body)}
+  .gate-link{background:none;border:none;color:var(--azul);font-size:12px;cursor:pointer;margin-top:12px;text-decoration:underline}
+  .gate-link:hover{color:var(--cyan)}
+  .usuario-info{font-family:var(--mono);font-size:11px;color:var(--ink-soft);white-space:nowrap;align-self:center}
   #gate .regbar{width:100%;max-width:380px;border-radius:14px 14px 0 0;overflow:hidden;margin-bottom:-1px;position:relative;z-index:1;width:92%;max-width:380px}
+
+  /* ---- Visibilidad por rol ---- */
+  body:not([data-rol="admin"]) .solo-admin{display:none !important;}
+  body[data-rol="viewer"] .solo-editor{display:none !important;}
+  body[data-rol="viewer"] .upload-grid,
+  body[data-rol="viewer"] .form-acuerdo{display:none !important;}
+  body[data-rol="viewer"] .estado,
+  body[data-rol="viewer"] .novedad,
+  body[data-rol="viewer"] .fecha-real,
+  body[data-rol="viewer"] .ac-edit,
+  body[data-rol="viewer"] .ac-borrar{pointer-events:none;opacity:.55;background:var(--paper) !important;border-color:transparent !important;}
 
   /* Aviso de configuración pendiente */
   #configAviso{background:var(--warn-bg);border:1px solid #EBCB9A;border-radius:12px;padding:18px 20px;margin-bottom:20px;display:none}
@@ -269,8 +287,19 @@
     appId: "1:89967712304:web:b8484dad6d1e225abdf5f5"
   };
 
-  // 2) Clave de acceso al tablero (compártela con Magda / direcciones)
-  const CLAVE_ACCESO = "coditeq2026";
+  // 2) USUARIOS Y ROLES  ── acceso con correo y contraseña (Firebase Authentication)
+  //    IMPORTANTE: escribe cada correo EN MINÚSCULAS y exactamente como se creó en Firebase.
+  //    Estos mismos correos deben (a) existir en Firebase → Authentication y
+  //    (b) estar en la lista blanca de las Reglas de Firestore (ver documento de reglas).
+  //    Roles:  admin  = ve y edita todo + respaldo/restauración + gestión de usuarios
+  //            editor = carga Excel, marca estados/entregas y registra acuerdos
+  //            viewer = solo lectura (ve y filtra; no carga, no marca, no registra, no respalda)
+  const USUARIOS = {
+    "viviana.pazmino@coditeq.com": "admin",   // Viviana Pazmiño  ← REEMPLAZA por el correo real
+    "pablo.montiel@coditeq.com":   "editor",  // Pablo Montiel    ← REEMPLAZA por el correo real
+    "magda.acosta@coditeq.com":    "viewer",  // Magda Acosta     ← REEMPLAZA por el correo real
+    "diana.madrid@coditeq.com":    "viewer"   // Diana Madrid     ← REEMPLAZA por el correo real
+  };
 
   // 3) Nombres de las colecciones en Firestore (no es necesario cambiarlos)
   const COLECCION_OP = "op_magda";
@@ -421,10 +450,12 @@
   <div class="regbar" aria-hidden="true"><span class="c"></span><span class="m"></span><span class="y"></span><span class="k"></span></div>
   <div class="card">
     <h2>Tablero de Seguimiento OP</h2>
-    <p>Coditeq · Ingresa la clave de acceso para ver el tablero</p>
-    <input type="password" id="gateInput" placeholder="••••••••" autocomplete="off">
+    <p>Coditeq · Inicia sesión con tu correo y contraseña</p>
+    <input type="email" id="gateEmail" placeholder="correo@coditeq.com" autocomplete="username" autocapitalize="off" spellcheck="false">
+    <input type="password" id="gateInput" placeholder="Contraseña" autocomplete="current-password">
     <div class="err" id="gateErr"></div>
-    <button class="btn primary" style="width:100%;justify-content:center" onclick="verificarClave()">Entrar</button>
+    <button class="btn primary" style="width:100%;justify-content:center" onclick="iniciarSesion()" id="gateBtn">Ingresar</button>
+    <button class="gate-link" onclick="recuperarClave()">¿Olvidaste tu contraseña?</button>
   </div>
 </div>
 
@@ -436,8 +467,10 @@
   </div>
   <div class="header-actions">
     <span class="conexion config" id="estadoConexion">Configurando…</span>
+    <span class="usuario-info" id="usuarioInfo" hidden></span>
     <button class="btn ghost" onclick="abrirGuia()">❓ Guía rápida</button>
-    <button class="btn ghost" onclick="exportarRespaldo()">⬇ Respaldo</button>
+    <button class="btn ghost solo-admin" onclick="exportarRespaldo()">⬇ Respaldo</button>
+    <button class="btn ghost" id="btnCerrarSesion" onclick="cerrarSesion()" hidden>Cerrar sesión</button>
   </div>
 </header>
 
@@ -472,7 +505,7 @@
   <div class="panel-comercial">
     <div class="dato"><span class="etiqueta">Comercial</span><strong id="nombreComercial">—</strong></div>
     <div class="dato"><span class="etiqueta">Clientes en alcance</span><strong id="totalAlcance">0</strong></div>
-    <button class="btn ghost" onclick="document.getElementById('fileInputAlcance').click()">⬆ Actualizar clientes asignados</button>
+    <button class="btn ghost solo-editor" onclick="document.getElementById('fileInputAlcance').click()">⬆ Actualizar clientes asignados</button>
     <input type="file" id="fileInputAlcance" accept=".xlsx,.xls" hidden>
   </div>
 
@@ -527,8 +560,8 @@
     <div class="tablewrap">
       <table>
         <thead><tr>
-          <th>OP / NP</th><th>Cliente / Producto</th><th class="num">Cantidad</th>
-          <th>F. Creación</th><th>F. Entrega</th>
+          <th>OP / NP</th><th>Cliente / Producto</th><th class="num">Cantidad</th><th>Tipo</th>
+          <th>F. Creación</th><th>F. Entrega Cliente</th>
           <th class="num" title="Fecha de Entrega − Fecha de Creación">Días asignados</th>
           <th class="num">Días restantes</th>
           <th>Estado</th><th style="min-width:220px">Novedad</th>
@@ -898,18 +931,60 @@ function renderBufferTabla(items,ids){
   document.getElementById(ids.empty).hidden=lista.length>0;
 }
 
-/* ---------- Clave de acceso ---------- */
-function verificarClave(){
-  const v=document.getElementById('gateInput').value;
-  if(v===CLAVE_ACCESO){
-    sessionStorage.setItem('op_gate_ok','1');
-    document.getElementById('gate').style.display='none';
-  }else{
-    document.getElementById('gateErr').textContent='Clave incorrecta. Intenta de nuevo.';
-  }
+/* ---------- Autenticación y roles ---------- */
+let ROL = null;                 // 'admin' | 'editor' | 'viewer' | null
+let auth = null;
+function rolDe(email){ return USUARIOS[String(email||'').trim().toLowerCase()] || null; }
+function puedeEditar(){ return ROL==='admin' || ROL==='editor'; }
+function esAdmin(){ return ROL==='admin'; }
+function nombreRol(r){ return r==='admin'?'Administradora':r==='editor'?'Editor':'Solo lectura'; }
+function bloqueadoLectura(){ toast('Tu perfil es de solo lectura: no puedes realizar esta acción.'); }
+
+function mostrarGate(){ const g=document.getElementById('gate'); if(g) g.style.display='flex'; }
+function ocultarGate(){ const g=document.getElementById('gate'); if(g) g.style.display='none'; }
+function gateError(msg){ const e=document.getElementById('gateErr'); if(e) e.textContent=msg||''; }
+
+function iniciarSesion(){
+  if(!auth){ gateError('El sistema de acceso aún se está iniciando, intenta de nuevo en un momento.'); return; }
+  const email=(document.getElementById('gateEmail').value||'').trim();
+  const pass=document.getElementById('gateInput').value||'';
+  if(!email||!pass){ gateError('Escribe tu correo y tu contraseña.'); return; }
+  gateError('');
+  const btn=document.getElementById('gateBtn'); if(btn){ btn.disabled=true; btn.textContent='Ingresando…'; }
+  auth.signInWithEmailAndPassword(email,pass).catch(err=>{
+    gateError(traducirErrorAuth(err));
+  }).finally(()=>{ if(btn){ btn.disabled=false; btn.textContent='Ingresar'; } });
 }
-document.getElementById('gateInput').addEventListener('keydown',e=>{ if(e.key==='Enter') verificarClave(); });
-if(sessionStorage.getItem('op_gate_ok')==='1') document.getElementById('gate').style.display='none';
+function recuperarClave(){
+  if(!auth){ gateError('El sistema de acceso aún se está iniciando.'); return; }
+  const email=(document.getElementById('gateEmail').value||'').trim();
+  if(!email){ gateError('Escribe tu correo arriba y vuelve a pulsar “¿Olvidaste tu contraseña?”.'); return; }
+  auth.sendPasswordResetEmail(email)
+    .then(()=>gateError('Te enviamos un correo para restablecer la contraseña (revisa spam).'))
+    .catch(err=>gateError(traducirErrorAuth(err)));
+}
+function cerrarSesion(){ if(auth) auth.signOut(); }
+function traducirErrorAuth(err){
+  const c=(err&&err.code)||'';
+  if(c.includes('invalid-credential')||c.includes('wrong-password')||c.includes('user-not-found')) return 'Correo o contraseña incorrectos.';
+  if(c.includes('invalid-email')) return 'El correo no tiene un formato válido.';
+  if(c.includes('too-many-requests')) return 'Demasiados intentos. Espera unos minutos e intenta de nuevo.';
+  if(c.includes('user-disabled')) return 'Esta cuenta está deshabilitada. Contacta a la administradora.';
+  if(c.includes('network')) return 'Sin conexión. Revisa tu internet e intenta de nuevo.';
+  return 'No se pudo iniciar sesión. '+(err&&err.message?err.message:'');
+}
+function aplicarRol(){
+  document.body.dataset.rol = ROL || '';
+  const info=document.getElementById('usuarioInfo');
+  if(info){
+    const u=auth&&auth.currentUser?auth.currentUser.email:'';
+    info.hidden=!ROL;
+    info.textContent = ROL ? `${u} · ${nombreRol(ROL)}` : '';
+  }
+  const bs=document.getElementById('btnCerrarSesion'); if(bs) bs.hidden=!ROL;
+}
+document.getElementById('gateInput').addEventListener('keydown',e=>{ if(e.key==='Enter') iniciarSesion(); });
+document.getElementById('gateEmail').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('gateInput').focus(); });
 
 /* ---------- Utilidades ---------- */
 function hoyISO(){ const d=new Date(); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); }
@@ -961,10 +1036,14 @@ function iniciar(){
   if(firebaseConfigurado()){
     try{
       firebase.initializeApp(FIREBASE_CONFIG);
+      auth=firebase.auth();
       db=firebase.firestore();
-      modoNube=true;
-      setConexion('on','En línea · sincronizado');
+      try{ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); }catch(e){}
+      setConexion('config','Inicia sesión');
 
+      let datosConectados=false;
+      function conectarDatos(){
+      modoNube=true;
       let alcanceListo=false;
       db.collection(COLECCION_OP).onSnapshot(snap=>{
         const ordenes={}; let meta=null, alcanceDoc=null;
@@ -1061,6 +1140,22 @@ function iniciar(){
       }, err=>{
         toast('Error de sincronización (acuerdos): '+err.message);
       });
+      } // ← fin de conectarDatos()
+
+      auth.onAuthStateChanged(function(user){
+        if(user){
+          const rol=rolDe(user.email);
+          if(!rol){
+            gateError('El correo '+(user.email||'')+' no tiene acceso al tablero. Contacta a la administradora.');
+            mostrarGate(); setConexion('off','Correo sin acceso'); auth.signOut(); return;
+          }
+          ROL=rol; aplicarRol(); ocultarGate(); gateError('');
+          setConexion('on','En línea · '+nombreRol(rol));
+          if(!datosConectados){ datosConectados=true; conectarDatos(); }
+        }else{
+          ROL=null; aplicarRol(); mostrarGate(); setConexion('config','Inicia sesión');
+        }
+      });
     }catch(e){
       setConexion('off','Error de configuración Firebase');
       modoLocal();
@@ -1068,6 +1163,7 @@ function iniciar(){
   }else{
     document.getElementById('configAviso').style.display='block';
     setConexion('config','Modo local (sin Firebase)');
+    ROL='admin'; aplicarRol(); ocultarGate();
     modoLocal();
   }
 }
@@ -1194,6 +1290,7 @@ activarTarjeta(document.getElementById('dropzoneVentas'),document.getElementById
 function normKey(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''); }
 
 async function procesarArchivo(file){
+  if(!puedeEditar()){ bloqueadoLectura(); return; }
   const buf=await file.arrayBuffer();
   try{
     const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
@@ -1202,19 +1299,28 @@ async function procesarArchivo(file){
     if(!rows.length){ toast('El archivo no tiene filas de datos.'); return; }
 
     const keys=Object.keys(rows[0]);
-    const buscar=(...frags)=>keys.find(k=>{const n=normKey(k); return frags.every(f=>n.includes(f));});
+    // ── Mapeo por POSICIÓN de columna (formato TABLERO ESTATUS OP PLANTA) ──
+    //   A=0 Cliente · B=1 Producto · D=3 OP · E=4 Cantidad · K=10 F.Entrega Cliente
+    //   Q=16 Centro · T=19 Tipo de Orden · U=20 F.Creación · V=21 Tipo · I=8 metros
+    const col=i=>keys[i];
     const map={
-      op: buscar('codigo','op')||buscar('op'),
-      np: buscar('numero','np')||buscar('np'),
-      cliente: buscar('cliente'), desc: buscar('descripcion'),
-      oc: buscar('orden','compra'), cant: buscar('cantidad'),
-      fCre: keys.find(k=>{const n=normKey(k);return n.includes('fecha')&&n.includes('creacion')&&!n.includes('np');}),
-      fEnt: buscar('fecha','entrega'), prior: buscar('prioridad'),
-      centro: buscar('centro','proceso'), tipo: buscar('tipo','orden'),
-      metros: buscar('metros'), ficha: buscar('ficha')
+      op: col(3),              // D
+      np: null,                // este formato no trae NP (con la OP basta)
+      cliente: col(0),         // A
+      desc: col(1),            // B  (producto / referencia)
+      oc: null,
+      cant: col(4),            // E
+      fCre: col(20),           // U
+      fEnt: col(10),           // K  (fecha de entrega del cliente)
+      prior: null,
+      centro: col(16),         // Q
+      tipoOrden: col(19),      // T  (Tipo de Orden)
+      tipoV: col(21),          // V  (campo "Tipo" solicitado)
+      metros: col(8),          // I
+      ficha: null
     };
-    if(!map.op||!map.fCre||!map.fEnt){
-      toast('No se reconocieron las columnas “Código OP”, “Fecha de Creación” o “Fecha de Entrega”.'); return;
+    if(!map.op){
+      toast('No se reconoció la columna de OP (se espera en la columna D). ¿Es el archivo correcto?'); return;
     }
 
     let nuevas=0, actualizadas=0, fueraAlcance=0;
@@ -1232,7 +1338,8 @@ async function procesarArchivo(file){
         fechaEntrega:parseFecha(r[map.fEnt]),
         prioridad:String(r[map.prior]??'').trim(),
         centro:String(r[map.centro]??'').trim(),
-        tipoOrden:String(r[map.tipo]??'').trim(),
+        tipoOrden:String(r[map.tipoOrden]??'').trim(),
+        tipo:String(r[map.tipoV]??'').trim(),
         metros:Number(String(r[map.metros]??'').replace(/[^\d.-]/g,''))||null,
         ficha:String(r[map.ficha]??'').trim()
       };
@@ -1283,6 +1390,7 @@ async function procesarArchivo(file){
 
 /* ---------- Carga de Excel: lista de clientes asignados (alcance) ---------- */
 async function procesarArchivoAlcance(file){
+  if(!puedeEditar()){ bloqueadoLectura(); return; }
   const buf=await file.arrayBuffer();
   try{
     const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
@@ -1388,6 +1496,7 @@ function recalcularTransitoProduccionDesdeFilas(rows,map){
 }
 
 async function procesarArchivoBuffer(file){
+  if(!puedeEditar()){ bloqueadoLectura(); return; }
   const buf=await file.arrayBuffer();
   try{
     const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
@@ -1447,6 +1556,7 @@ async function procesarArchivoBuffer(file){
 }
 
 async function procesarArchivoSitio(file){
+  if(!puedeEditar()){ bloqueadoLectura(); return; }
   const buf=await file.arrayBuffer();
   try{
     const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
@@ -1498,6 +1608,7 @@ async function procesarArchivoSitio(file){
 }
 
 async function procesarArchivoTransito(file){
+  if(!puedeEditar()){ bloqueadoLectura(); return; }
   const buf=await file.arrayBuffer();
   try{
     const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
@@ -1548,7 +1659,7 @@ async function procesarArchivoTransito(file){
 }
 
 /* ---------- Acciones ---------- */
-function cambiarEstado(op,nuevo){
+function cambiarEstado(op,nuevo){ if(!puedeEditar()){ bloqueadoLectura(); render(); return; }
   const o=DB.ordenes[op]; if(!o) return;
   o.estado=nuevo;
   if(nuevo==='Entregada'){
@@ -1560,8 +1671,8 @@ function cambiarEstado(op,nuevo){
   if(cambiosBuffer.length) guardarBufferLote(cambiosBuffer).then(guardarMetaBuffer);
   if(!modoNube) render();
 }
-function cambiarNovedad(op,txt){ const o=DB.ordenes[op]; if(!o) return; o.novedad=txt; guardarOrden(op); }
-function cambiarFechaReal(op,iso){ const o=DB.ordenes[op]; if(!o||!iso) return; o.fechaRealEntrega=iso; guardarOrden(op); if(!modoNube) render(); }
+function cambiarNovedad(op,txt){ if(!puedeEditar()){ bloqueadoLectura(); return; } const o=DB.ordenes[op]; if(!o) return; o.novedad=txt; guardarOrden(op); }
+function cambiarFechaReal(op,iso){ if(!puedeEditar()){ bloqueadoLectura(); return; } const o=DB.ordenes[op]; if(!o||!iso) return; o.fechaRealEntrega=iso; guardarOrden(op); if(!modoNube) render(); }
 function devolverATablero(op){
   const o=DB.ordenes[op]; if(!o) return;
   o.estado=o.novedad?'Con Novedad':'En proceso sin novedad';
@@ -1633,6 +1744,7 @@ function agruparClientes(pres,vent){
 
 /* ---- Carga: Presupuesto mes a mes (hoja Magda por cliente + hoja Coditeq totales) ---- */
 async function procesarArchivoPresupuesto(file){
+  if(!puedeEditar()){ bloqueadoLectura(); return; }
   const buf=await file.arrayBuffer();
   try{
     const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
@@ -1687,6 +1799,7 @@ async function procesarArchivoPresupuesto(file){
 
 /* ---- Carga: Reporte de ventas (Truput) ---- */
 async function procesarArchivoVentas(file){
+  if(!puedeEditar()){ bloqueadoLectura(); return; }
   const buf=await file.arrayBuffer();
   try{
     const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
@@ -1921,6 +2034,7 @@ function limpiarFormAcuerdo(){
   });
 }
 function guardarNuevoAcuerdo(){
+  if(!puedeEditar()){ bloqueadoLectura(); return; }
   const g=id=>document.getElementById(id);
   const fecha=g('acFecha').value||hoyISO();
   const tipo=g('acTipo').value.trim();
@@ -1937,6 +2051,7 @@ function guardarNuevoAcuerdo(){
   toast('Acuerdo agregado.');
 }
 function actualizarAcuerdoCampo(el){
+  if(!puedeEditar()){ bloqueadoLectura(); return; }
   const id=el.dataset.id, campo=el.dataset.campo;
   if(!id||!DB.acuerdos[id]) return;
   const val=el.textContent.trim();
@@ -1946,6 +2061,7 @@ function actualizarAcuerdoCampo(el){
   renderAcuerdos();
 }
 function eliminarAcuerdo(id){
+  if(!puedeEditar()){ bloqueadoLectura(); return; }
   if(!DB.acuerdos[id]) return;
   if(!confirm('¿Eliminar este acuerdo? Esta acción no se puede deshacer.')) return;
   delete DB.acuerdos[id];
@@ -2089,6 +2205,7 @@ function render(){
       <td><span class="op">${esc(o.op)}</span><span class="np">${esc(o.np)}</span>${o.cerrada?`<span class="badge-cerrada" title="Ya no aparece en el último reporte cargado${o.fechaCierre?' · '+esc(o.fechaCierre):''}">cerrada</span>`:''}</td>
       <td><span class="cliente">${esc(o.cliente)}</span><span class="prod" title="${esc(o.descripcion)}">${esc(o.descripcion)}</span></td>
       <td class="mono num">${fmtNum(o.cantidad)}</td>
+      <td>${o.tipo?`<span class="tipo-chip">${esc(o.tipo)}</span>`:'<span style="color:var(--ink-soft)">—</span>'}</td>
       <td class="mono">${fmtFecha(o.fechaCreacion)}</td>
       <td class="mono">${fmtFecha(o.fechaEntrega)}</td>
       <td class="num"><span class="dias asig">${asig??'—'}</span></td>
@@ -2206,6 +2323,7 @@ function exportarEntregadas(){
   XLSX.writeFile(wb,`entregas_OP_${hoyISO()}.xlsx`);
 }
 function exportarRespaldo(){
+  if(!esAdmin()){ toast('Solo la administradora puede descargar respaldos.'); return; }
   const blob=new Blob([JSON.stringify({
     ordenes:DB.ordenes, ultimaCarga:DB.ultimaCarga,
     amortiguadores:DB.amortiguadores, ultimaCargaBuffer:DB.ultimaCargaBuffer,
@@ -2219,6 +2337,7 @@ function exportarRespaldo(){
   toast('Respaldo descargado.');
 }
 async function importarRespaldo(input){
+  if(!esAdmin()){ toast('Solo la administradora puede restaurar respaldos.'); return; }
   const f=input.files[0]; if(!f) return;
   try{
     const data=JSON.parse(await f.text());
